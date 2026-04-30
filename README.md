@@ -1,6 +1,6 @@
 # Dead Surge
 
-`Survival` is a Decentraland SDK 7 multiplayer arena game focused on wave-based zombie combat, arena hazards, and short-session progression. Players enter an authoritative multiplayer match, survive escalating enemy waves, collect resources, buy stronger tools, and push as far as possible through a 100-wave survival ladder.
+`Dead Surge` is a Decentraland SDK 7 multiplayer arena game focused on wave-based zombie combat, arena hazards, and short-session progression. Players enter an authoritative multiplayer match, survive escalating enemy waves, collect resources, buy stronger tools, and push as far as possible through a 100-wave survival ladder.
 
 ## Game Overview
 
