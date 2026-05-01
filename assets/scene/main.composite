@@ -1294,16 +1294,16 @@
               "y": 3.8499999046325684,
               "z": 19.399999618530273
             },
+            "scale": {
+              "x": 3.799999952316284,
+              "y": 6.150000095367432,
+              "z": 1
+            },
             "rotation": {
               "x": 0,
               "y": -0.707099974155426,
               "z": 0,
               "w": 0.707099974155426
-            },
-            "scale": {
-              "x": 3.799999952316284,
-              "y": 6.150000095367432,
-              "z": 1
             },
             "parent": 0
           }
@@ -2714,7 +2714,7 @@
         "serializationType": "map"
       },
       "data": {
-        "572": {
+        "0": {
           "json": {
             "gizmo": 0
           }
@@ -3286,7 +3286,7 @@
       }
     },
     {
-      "name": "inspector::SceneMetadata-v3",
+      "name": "inspector::SceneMetadata-v4",
       "jsonSchema": {
         "type": "object",
         "properties": {
@@ -3604,6 +3604,14 @@
               "type": "string",
               "serializationType": "utf8-string"
             }
+          },
+          "disableNearbyVoiceChat": {
+            "type": "boolean",
+            "serializationType": "optional",
+            "optionalJsonSchema": {
+              "type": "boolean",
+              "serializationType": "boolean"
+            }
           }
         },
         "serializationType": "map"
@@ -3611,9 +3619,9 @@
       "data": {
         "0": {
           "json": {
-            "name": "Survival",
+            "name": "Dead Surge",
             "description": "Multiplayer arena game focused on wave-based zombie combat, arena hazards, and short-session progression. Players enter an authoritative multiplayer match, survive escalating enemy waves, collect resources, buy stronger tools, and push as far as possible through a 100-wave survival ladder.",
-            "thumbnail": "",
+            "thumbnail": "assets/images/DeadSurgeThumbnail2.png",
             "categories": [],
             "author": "SDK",
             "email": "",
@@ -3968,7 +3976,8 @@
               }
             ],
             "skyboxConfig": {},
-            "creator": ""
+            "creator": "",
+            "disableNearbyVoiceChat": false
           }
         }
       }
