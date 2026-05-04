@@ -579,7 +579,7 @@ export function LobbyStoreUi() {
           width: '100%',
           maxWidth: STORE_PANEL_MAX_W,
           height: STORE_PANEL_HEIGHT,
-          padding: { top: scaleStoreSpacing(44), bottom: scaleStoreSpacing(28), left: scaleStoreSpacing(4), right: scaleStoreSpacing(28) },
+          padding: { top: scaleStoreSpacing(44), bottom: scaleStoreSpacing(28), left: scaleStoreSpacing(2), right: scaleStoreSpacing(30) },
           borderRadius: 14,
         }}
         uiBackground={{ textureMode: 'stretch', texture: { src: 'assets/images/background.png' } }}
