@@ -497,23 +497,24 @@ function getContainedWeaponImageSize(weaponId: LoadoutWeaponId, maxWidth: number
 // ─── Metrics ─────────────────────────────────────────────────────────────────
 
 function getStoreMetrics() {
+  const actualMobile = isMobile()
   const rowCardAreaW = STORE_UPGRADE_ROW_RENDER_WIDTH
   const rowCardAreaH = STORE_UPGRADE_ROW_RENDER_HEIGHT
-  const cardW = scaleStoreWidth(STORE_UPGRADE_CARD_RENDER_WIDTH)
+  const cardW = scaleStoreWidth(actualMobile ? STORE_UPGRADE_CARD_RENDER_WIDTH + 4 : STORE_UPGRADE_CARD_RENDER_WIDTH)
   const cardH = scaleStoreHeight(STORE_UPGRADE_CARD_RENDER_HEIGHT)
   const cardGap = scaleStoreSpacing(1)
   const cardImageBox = scaleStoreImage(74)
   const cardImageAreaH = scaleStoreHeight(96)
   const cardNameAreaH = 0
   const rowGap = scaleStoreSpacing(7)
-  const mobile = isMobile()
-  const rowLabelW = mobile ? 0 : Math.max(
+  const mobile = false
+  const rowLabelW = Math.max(
     STORE_WEAPON_LABEL_SPRITES.gun.renderW,
     STORE_WEAPON_LABEL_SPRITES.shotgun.renderW,
     STORE_WEAPON_LABEL_SPRITES.minigun.renderW
   )
-  const rowLabelGap = mobile ? 0 : scaleStoreSpacing(10)
-  const detailPanelW = mobile ? scaleStoreWidth(280) : scaleStoreWidth(175)
+  const rowLabelGap = scaleStoreSpacing(10)
+  const detailPanelW = scaleStoreWidth(175)
 
   // Stat row widths derived from panel so they always add up (panel - 24 panel pad - 26 row pad - 16 gaps)
   const statNoGap = detailPanelW - 24 - 26 - 16
@@ -523,7 +524,10 @@ function getStoreMetrics() {
 
   const detailTitleH = scaleStoreHeight(34)
   const detailSubtitleH = scaleStoreHeight(20)
-  const storePanelMaxW = STORE_PANEL_SOURCE_WIDTH
+  const storePanelMaxW = actualMobile ? Math.round(STORE_PANEL_SOURCE_WIDTH * 1.18) : STORE_PANEL_SOURCE_WIDTH
+  const storePanelBaseHeight = actualMobile
+    ? Math.round(STORE_PANEL_SOURCE_HEIGHT * (storePanelMaxW / STORE_PANEL_SOURCE_WIDTH) * 0.94)
+    : STORE_PANEL_SOURCE_HEIGHT
   const storeBodyGap = 0
   const gridColumns = 3
   const leftGridW = rowLabelW + rowLabelGap + rowCardAreaW
@@ -531,16 +535,19 @@ function getStoreMetrics() {
   const detailBoxSpanW = STORE_DETAIL_BOX_RENDER_WIDTH
   const messageSpanW = leftGridW + detailBoxSpanW + scaleStoreSpacing(38)
   const storeGridHeight = cardH * WEAPON_ROWS.length + rowGap * (WEAPON_ROWS.length - 1)
+  const detailBoxScale = actualMobile ? storeGridHeight / STORE_DETAIL_BOX_RENDER_HEIGHT : 1
+  const detailBoxRenderWidth = Math.round(STORE_DETAIL_BOX_RENDER_WIDTH * detailBoxScale)
+  const detailBoxRenderHeight = Math.round(STORE_DETAIL_BOX_RENDER_HEIGHT * detailBoxScale)
   const storeControlsHeight = scaleStoreButton(34)
   const storeBodyMarginTop = scaleStoreSpacing(28)
-  const storeMessageWidth = messageSpanW
+  const storeMessageWidth = leftGridW + detailBoxRenderWidth + scaleStoreSpacing(38)
   const storeMessageHeight = STORE_MESSAGE_RENDER_HEIGHT
   const storeMessageMarginTop = scaleStoreSpacing(6)
   const storeMessageMarginBottom = scaleStoreSpacing(0)
   const storePanelVerticalPadding = scaleStoreSpacing(0)
   const storeBodyHeight = storeGridHeight + scaleStoreSpacing(10)
   const storePanelContentH = storeControlsHeight + storeBodyMarginTop + storeBodyHeight + storeMessageMarginTop + storeMessageHeight + storeMessageMarginBottom + storePanelVerticalPadding
-  const storePanelHeight = Math.max(STORE_PANEL_SOURCE_HEIGHT + STORE_PANEL_EXTRA_HEIGHT, storePanelContentH)
+  const storePanelHeight = Math.max(storePanelBaseHeight + STORE_PANEL_EXTRA_HEIGHT, storePanelContentH)
 
   return {
     CARD_W: cardW, CARD_H: cardH, CARD_GAP: cardGap, ROW_CARD_AREA_W: rowCardAreaW, ROW_CARD_AREA_H: rowCardAreaH,
@@ -548,6 +555,7 @@ function getStoreMetrics() {
     ROW_GAP: rowGap, ROW_LABEL_W: rowLabelW, ROW_LABEL_GAP: rowLabelGap,
     DETAIL_PANEL_W: detailPanelW, DETAIL_TITLE_H: detailTitleH, DETAIL_SUBTITLE_H: detailSubtitleH,
     STORE_PANEL_MAX_W: storePanelMaxW, STORE_BODY_GAP: storeBodyGap,
+    STORE_DETAIL_BOX_RENDER_WIDTH: detailBoxRenderWidth, STORE_DETAIL_BOX_RENDER_HEIGHT: detailBoxRenderHeight,
     LEFT_GRID_W: leftGridW, STORE_CONTENT_W: storeContentW, STORE_GRID_HEIGHT: storeGridHeight, STORE_PANEL_HEIGHT: storePanelHeight,
     STORE_BODY_MARGIN_TOP: storeBodyMarginTop,
     STORE_MESSAGE_WIDTH: storeMessageWidth, STORE_MESSAGE_HEIGHT: storeMessageHeight,
@@ -561,9 +569,10 @@ function getStoreMetrics() {
 
 function UpgradeCard({ weapon, isLast }: { weapon: LoadoutWeaponDefinition; isLast?: boolean }) {
   const { CARD_W, CARD_H, CARD_GAP, CARD_IMAGE_BOX, CARD_IMAGE_AREA_H } = getStoreMetrics()
+  const ACTUAL_MOBILE = isMobile()
   const imageSrc = WEAPON_IMAGE[weapon.id]
   const cardImageSize = getContainedWeaponImageSize(weapon.id, CARD_IMAGE_BOX, CARD_IMAGE_BOX)
-  const cardTagWidth = Math.max(1, CARD_W - scaleStoreSpacing(28))
+  const cardTagWidth = Math.max(1, CARD_W - scaleStoreSpacing(ACTUAL_MOBILE ? 18 : 28))
   const cardTagScale = cardTagWidth / STORE_CARD_TAG_SOURCE_WIDTH
   const cardTagHeight = Math.max(1, Math.round(STORE_CARD_TAG_SOURCE_HEIGHT * cardTagScale))
   const owned = isLoadoutWeaponOwned(weapon.id)
@@ -575,7 +584,9 @@ function UpgradeCard({ weapon, isLast }: { weapon: LoadoutWeaponDefinition; isLa
     : (owned
       ? 'EQUIP'
       : (unlocked ? 'BUY' : 'LOCKED'))
-  const cardTagLeft = weapon.upgradeLevel === 1 ? scaleStoreSpacing(7) : scaleStoreSpacing(10)
+  const cardTagLeft = ACTUAL_MOBILE
+    ? scaleStoreSpacing(6)
+    : (weapon.upgradeLevel === 1 ? scaleStoreSpacing(7) : scaleStoreSpacing(10))
   const cardTagTextColor = cardTagLabel === 'BUY'
     ? (canAfford ? C.textGold : C.textBurgundy)
     : (cardTagLabel === 'LOCKED' ? C.textGray : C.textWhite)
@@ -644,7 +655,6 @@ function UpgradeCard({ weapon, isLast }: { weapon: LoadoutWeaponDefinition; isLa
 function WeaponRow({ weaponType, isLast }: { weaponType: ArenaWeaponType; isLast?: boolean }) {
   const { CARD_H, ROW_GAP, ROW_LABEL_W, ROW_LABEL_GAP, ROW_CARD_AREA_W, ROW_CARD_AREA_H } = getStoreMetrics()
   const upgrades = getWeaponUpgrades(weaponType)
-  const mobile = isMobile()
   const labelSprite = STORE_WEAPON_LABEL_SPRITES[weaponType]
   return (
     <UiEntity
@@ -653,29 +663,27 @@ function WeaponRow({ weaponType, isLast }: { weaponType: ArenaWeaponType; isLast
         width: '100%', margin: { bottom: isLast ? 0 : ROW_GAP },
       }}
     >
-      {!mobile && (
+      <UiEntity
+        uiTransform={{
+          width: ROW_LABEL_W, height: CARD_H,
+          alignItems: 'center', justifyContent: 'center',
+          margin: { left: STORE_WEAPON_LABEL_OFFSET_LEFT, right: ROW_LABEL_GAP },
+          flexShrink: 0,
+        }}
+      >
         <UiEntity
           uiTransform={{
-            width: ROW_LABEL_W, height: CARD_H,
-            alignItems: 'center', justifyContent: 'center',
-            margin: { left: STORE_WEAPON_LABEL_OFFSET_LEFT, right: ROW_LABEL_GAP },
-            flexShrink: 0,
+            width: labelSprite.renderW,
+            height: labelSprite.renderH,
+            margin: { top: labelSprite.offsetTop ?? 0 }
           }}
-        >
-          <UiEntity
-            uiTransform={{
-              width: labelSprite.renderW,
-              height: labelSprite.renderH,
-              margin: { top: labelSprite.offsetTop ?? 0 }
-            }}
-            uiBackground={{
-              textureMode: 'stretch',
-              texture: { src: SHOP_HUD_SHEET_SRC },
-              uvs: STORE_WEAPON_LABEL_UVS[weaponType]
-            }}
-          />
-        </UiEntity>
-      )}
+          uiBackground={{
+            textureMode: 'stretch',
+            texture: { src: SHOP_HUD_SHEET_SRC },
+            uvs: STORE_WEAPON_LABEL_UVS[weaponType]
+          }}
+        />
+      </UiEntity>
 
       <UiEntity
         uiTransform={{
@@ -768,6 +776,7 @@ function StatRow({ label, value, statKey, labelW, barW, valueW }: {
 // ─── Detail Panel ─────────────────────────────────────────────────────────────
 
 function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefinition; embedded?: boolean }) {
+  const ACTUAL_MOBILE = isMobile()
   const { DETAIL_PANEL_W, DETAIL_TITLE_H, DETAIL_SUBTITLE_H, STORE_GRID_HEIGHT, STAT_LABEL_W, STAT_BAR_W, STAT_VALUE_W, MOBILE } = getStoreMetrics()
   const owned = isLoadoutWeaponOwned(weapon.id)
   const equipped = isLoadoutWeaponEquipped(weapon.id)
@@ -957,21 +966,26 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
         uiTransform={{
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'flex-start',
+          justifyContent: ACTUAL_MOBILE ? 'flex-end' : 'flex-start',
           width: '100%',
           height: detailButtonsSectionH,
           flexShrink: 0,
-          margin: { top: scaleStoreSpacing(6) }
+          margin: { top: ACTUAL_MOBILE ? scaleStoreSpacing(18) : scaleStoreSpacing(6) },
+          padding: ACTUAL_MOBILE ? { bottom: scaleStoreSpacing(14) } : undefined
         }}
       >
         {showOwnedLabel || !owned ? (
           <UiEntity
             uiTransform={{
-              width: owned ? Math.round(STORE_OWNED_SOURCE_WIDTH * STORE_OWNED_RENDER_SCALE) : Math.round(STORE_CARD_TAG_SOURCE_WIDTH * 0.9),
-              height: owned ? Math.round((STORE_OWNED_SOURCE_HEIGHT + 10) * STORE_OWNED_RENDER_SCALE) : Math.round(STORE_CARD_TAG_SOURCE_HEIGHT * 0.9),
+              width: owned
+                ? Math.round(STORE_OWNED_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.10 : STORE_OWNED_RENDER_SCALE))
+                : Math.round(STORE_CARD_TAG_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.02 : 0.9)),
+              height: owned
+                ? Math.round((STORE_OWNED_SOURCE_HEIGHT + 10) * (ACTUAL_MOBILE ? 0.92 : STORE_OWNED_RENDER_SCALE))
+                : Math.round(STORE_CARD_TAG_SOURCE_HEIGHT * (ACTUAL_MOBILE ? 0.92 : 0.9)),
               alignItems: 'center',
               justifyContent: 'center',
-              margin: { left: deniedPriceShakeOffset, bottom: scaleStoreSpacing(4) },
+              margin: { left: deniedPriceShakeOffset, bottom: ACTUAL_MOBILE ? scaleStoreSpacing(2) : scaleStoreSpacing(4) },
               borderRadius: 8
             }}
             uiBackground={priceBackground}
@@ -1013,23 +1027,27 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
         <UiEntity
           uiTransform={{
             width: (equipped || owned)
-              ? Math.round(STORE_EQUIPPED_SOURCE_WIDTH * STORE_EQUIPPED_RENDER_SCALE)
+              ? Math.round(STORE_EQUIPPED_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.12 : STORE_EQUIPPED_RENDER_SCALE))
               : (showBuyButtonSprite
-                ? STORE_BUY_SOURCE_WIDTH
+                ? Math.round(STORE_BUY_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.10 : 1))
                 : (showDisabledBuyButtonSprite
-                  ? STORE_BUY_DISABLED_SOURCE_WIDTH
-                  : (showUnlockPreviousButtonSprite ? STORE_UNLOCK_PREVIOUS_SOURCE_WIDTH : '88%'))),
+                  ? Math.round(STORE_BUY_DISABLED_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.10 : 1))
+                  : (showUnlockPreviousButtonSprite
+                    ? Math.round(STORE_UNLOCK_PREVIOUS_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.24 : 1))
+                    : '88%'))),
             height: (equipped || owned)
-              ? STORE_EQUIPPED_SOURCE_HEIGHT + 6
+              ? Math.round((STORE_EQUIPPED_SOURCE_HEIGHT + 6) * (ACTUAL_MOBILE ? 0.92 : 1))
               : (showBuyButtonSprite
-                ? STORE_BUY_SOURCE_HEIGHT
+                ? Math.round(STORE_BUY_SOURCE_HEIGHT * (ACTUAL_MOBILE ? 0.92 : 1))
                 : (showDisabledBuyButtonSprite
-                  ? STORE_BUY_DISABLED_SOURCE_HEIGHT
-                  : (showUnlockPreviousButtonSprite ? STORE_UNLOCK_PREVIOUS_SOURCE_HEIGHT : scaleStoreButton(MOBILE ? 40 : 46)))),
+                  ? Math.round(STORE_BUY_DISABLED_SOURCE_HEIGHT * (ACTUAL_MOBILE ? 0.92 : 1))
+                  : (showUnlockPreviousButtonSprite
+                    ? Math.round(STORE_UNLOCK_PREVIOUS_SOURCE_HEIGHT * (ACTUAL_MOBILE ? 1.14 : 1))
+                    : scaleStoreButton(MOBILE ? 40 : 46)))),
             borderRadius: 10,
             alignItems: 'center',
             justifyContent: 'center',
-            margin: { top: (showBuyButtonSprite || showUnlockPreviousButtonSprite || showDisabledBuyButtonSprite) ? scaleStoreSpacing(8) : 0 }
+            margin: { top: (showBuyButtonSprite || showUnlockPreviousButtonSprite || showDisabledBuyButtonSprite) ? scaleStoreSpacing(ACTUAL_MOBILE ? 8 : 8) : 0 }
           }}
           uiBackground={actionBackground}
           onMouseDown={actionHandler}
@@ -1051,10 +1069,13 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
 
 export function LobbyStoreUi() {
   if (!storeOpen) return null
+  const ACTUAL_MOBILE = isMobile()
   const {
     STORE_PANEL_MAX_W,
     STORE_CONTENT_W,
     LEFT_GRID_W,
+    STORE_DETAIL_BOX_RENDER_WIDTH,
+    STORE_DETAIL_BOX_RENDER_HEIGHT,
     STORE_BODY_MARGIN_TOP,
     STORE_PANEL_HEIGHT,
     STORE_MESSAGE_WIDTH,
@@ -1063,6 +1084,8 @@ export function LobbyStoreUi() {
     STORE_MESSAGE_MARGIN_BOTTOM,
     MOBILE
   } = getStoreMetrics()
+  const MOBILE_MESSAGE_RENDER_WIDTH = ACTUAL_MOBILE ? Math.round(STORE_MESSAGE_WIDTH * 0.995) : STORE_MESSAGE_WIDTH
+  const MOBILE_MESSAGE_RENDER_HEIGHT = ACTUAL_MOBILE ? Math.round(STORE_MESSAGE_HEIGHT * 1.06) : STORE_MESSAGE_HEIGHT
   const selected = LOADOUT_WEAPON_DEFINITIONS.find((w) => w.id === selectedWeaponId) ?? LOADOUT_WEAPON_DEFINITIONS[0]
   const gold = getPlayerGold()
 
@@ -1073,7 +1096,9 @@ export function LobbyStoreUi() {
         positionType: 'absolute',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: { left: '2vw', right: '8vw', top: '4vh', bottom: '4vh' },
+        padding: ACTUAL_MOBILE
+          ? { left: '0.5vw', right: '0.5vw', top: '2vh', bottom: '2vh' }
+          : { left: '2vw', right: '8vw', top: '4vh', bottom: '4vh' },
         pointerFilter: 'block',
         zIndex: 20,
       }}
@@ -1084,7 +1109,12 @@ export function LobbyStoreUi() {
           width: '100%',
           maxWidth: STORE_PANEL_MAX_W,
           height: STORE_PANEL_HEIGHT,
-          padding: { top: scaleStoreSpacing(74), bottom: scaleStoreSpacing(14), left: scaleStoreSpacing(2), right: scaleStoreSpacing(8) },
+          padding: {
+            top: scaleStoreSpacing(74),
+            bottom: scaleStoreSpacing(14),
+            left: ACTUAL_MOBILE ? scaleStoreSpacing(0) : scaleStoreSpacing(2),
+            right: ACTUAL_MOBILE ? scaleStoreSpacing(2) : scaleStoreSpacing(8)
+          },
           borderRadius: 14,
         }}
         uiBackground={{
@@ -1096,7 +1126,10 @@ export function LobbyStoreUi() {
         <UiEntity
           uiTransform={{
             positionType: 'absolute',
-            position: { top: STORE_HEADER_ACTIONS_TOP, right: STORE_HEADER_ACTIONS_RIGHT },
+            position: {
+              top: ACTUAL_MOBILE ? STORE_HEADER_ACTIONS_TOP + scaleStoreSpacing(10) : STORE_HEADER_ACTIONS_TOP,
+              right: STORE_HEADER_ACTIONS_RIGHT
+            },
             flexDirection: 'row',
             alignItems: 'center',
             zIndex: 2,
@@ -1104,8 +1137,8 @@ export function LobbyStoreUi() {
         >
           <UiEntity
             uiTransform={{
-              width: STORE_GOLD_RENDER_WIDTH,
-              height: STORE_GOLD_RENDER_HEIGHT,
+              width: ACTUAL_MOBILE ? Math.round(STORE_GOLD_RENDER_WIDTH * 1.08) : STORE_GOLD_RENDER_WIDTH,
+              height: ACTUAL_MOBILE ? Math.round(STORE_GOLD_RENDER_HEIGHT * 1.08) : STORE_GOLD_RENDER_HEIGHT,
               margin: { right: scaleStoreSpacing(12) },
             }}
             uiBackground={{
@@ -1130,7 +1163,7 @@ export function LobbyStoreUi() {
                 }}
                 uiText={{
                   value: `${gold} G`,
-                  fontSize: scaleStoreFont(20),
+                  fontSize: scaleStoreFont(ACTUAL_MOBILE ? 18 : 20),
                   color: C.textGold,
                   textAlign: 'middle-center'
                 }}
@@ -1143,8 +1176,8 @@ export function LobbyStoreUi() {
 
           <UiEntity
             uiTransform={{
-              width: STORE_CLOSE_RENDER_WIDTH,
-              height: STORE_CLOSE_RENDER_HEIGHT
+              width: ACTUAL_MOBILE ? Math.round(STORE_CLOSE_RENDER_WIDTH * 1.08) : STORE_CLOSE_RENDER_WIDTH,
+              height: ACTUAL_MOBILE ? Math.round(STORE_CLOSE_RENDER_HEIGHT * 1.08) : STORE_CLOSE_RENDER_HEIGHT
             }}
             uiBackground={{
               textureMode: 'stretch',
@@ -1159,12 +1192,16 @@ export function LobbyStoreUi() {
           uiTransform={{
             flexDirection: 'row',
             flexWrap: 'nowrap',
-            justifyContent: 'flex-start',
+            justifyContent: ACTUAL_MOBILE ? 'space-between' : 'flex-start',
             alignItems: 'flex-start',
-            width: '100%',
+            width: ACTUAL_MOBILE ? MOBILE_MESSAGE_RENDER_WIDTH : '100%',
             maxWidth: '100%',
-            alignSelf: 'flex-start',
-            margin: { top: STORE_BODY_MARGIN_TOP, left: 18 },
+            alignSelf: ACTUAL_MOBILE ? 'center' : 'flex-start',
+            margin: {
+              top: ACTUAL_MOBILE ? STORE_BODY_MARGIN_TOP + scaleStoreSpacing(20) : STORE_BODY_MARGIN_TOP,
+              left: ACTUAL_MOBILE ? 0 : 18,
+              right: ACTUAL_MOBILE ? 0 : 0
+            },
           }}
         >
           <UiEntity
@@ -1189,7 +1226,10 @@ export function LobbyStoreUi() {
             uiTransform={{
               width: STORE_DETAIL_BOX_RENDER_WIDTH,
               height: STORE_DETAIL_BOX_RENDER_HEIGHT,
-              margin: { left: -18 },
+              margin: {
+                left: ACTUAL_MOBILE ? scaleStoreSpacing(-8) : -18,
+                right: 0
+              },
               flexShrink: 0,
             }}
             uiBackground={{
@@ -1204,12 +1244,16 @@ export function LobbyStoreUi() {
 
         <UiEntity
           uiTransform={{
-            width: STORE_MESSAGE_WIDTH,
-            height: STORE_MESSAGE_HEIGHT,
-            alignSelf: 'flex-start',
+            width: MOBILE_MESSAGE_RENDER_WIDTH,
+            height: MOBILE_MESSAGE_RENDER_HEIGHT,
+            alignSelf: ACTUAL_MOBILE ? 'center' : 'flex-start',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: { top: -2, bottom: STORE_MESSAGE_MARGIN_BOTTOM, left: 18 },
+            margin: {
+              top: ACTUAL_MOBILE ? scaleStoreSpacing(6) : -2,
+              bottom: STORE_MESSAGE_MARGIN_BOTTOM,
+              left: ACTUAL_MOBILE ? 0 : 18
+            },
             padding: { left: scaleStoreSpacing(28), right: scaleStoreSpacing(28) },
           }}
           uiBackground={{
