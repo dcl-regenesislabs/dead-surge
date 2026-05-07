@@ -521,6 +521,7 @@ function getStoreMetrics() {
   const cardImageAreaH = scaleStoreHeight(96)
   const cardNameAreaH = 0
   const rowGap = scaleStoreSpacing(7)
+  // Intentionally keep desktop-style row labels and sizing logic on all devices for this shop layout.
   const mobile = false
   const rowLabelW = Math.max(
     STORE_WEAPON_LABEL_SPRITES.gun.renderW,
