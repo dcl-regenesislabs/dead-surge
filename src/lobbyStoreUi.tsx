@@ -216,9 +216,11 @@ const WEAPON_STATS: Partial<Record<LoadoutWeaponId, { dmg: string; rate: string;
 
 const WEAPON_ROWS: ArenaWeaponType[] = ['gun', 'shotgun', 'minigun']
 const SHOP_HUD_SHEET_SRC = 'assets/images/shop_hud.png'
+const SHOP_HUD_TEXTURE = { src: SHOP_HUD_SHEET_SRC, filterMode: 'tri-linear' as const, wrapMode: 'clamp' as const }
 const SHOP_HUD_ATLAS_SCALE = 1
-const SHOP_HUD_SHEET_WIDTH = 1536
-const SHOP_HUD_SHEET_HEIGHT = 1024
+const SHOP_HUD_SHEET_SCALE = 2
+const SHOP_HUD_SHEET_WIDTH = 1536 * SHOP_HUD_SHEET_SCALE
+const SHOP_HUD_SHEET_HEIGHT = 1024 * SHOP_HUD_SHEET_SCALE
 const STORE_PANEL_SOURCE_X = 6
 const STORE_PANEL_SOURCE_Y = 9
 const STORE_PANEL_SOURCE_WIDTH = 782
@@ -303,10 +305,11 @@ const STORE_PANEL_EXTRA_HEIGHT = 38
 type ShopAtlasUvs = [number, number, number, number, number, number, number, number]
 
 function createShopHudUvs(x: number, y: number, width: number, height: number): ShopAtlasUvs {
-  const left = x / SHOP_HUD_SHEET_WIDTH
-  const right = (x + width) / SHOP_HUD_SHEET_WIDTH
-  const bottom = 1 - (y + height) / SHOP_HUD_SHEET_HEIGHT
-  const top = 1 - y / SHOP_HUD_SHEET_HEIGHT
+  const s = SHOP_HUD_SHEET_SCALE
+  const left = (x * s) / SHOP_HUD_SHEET_WIDTH
+  const right = ((x + width) * s) / SHOP_HUD_SHEET_WIDTH
+  const bottom = 1 - ((y + height) * s) / SHOP_HUD_SHEET_HEIGHT
+  const top = 1 - (y * s) / SHOP_HUD_SHEET_HEIGHT
   return [left, bottom, left, top, right, top, right, bottom]
 }
 
@@ -644,7 +647,7 @@ function UpgradeCard({ weapon, isLast }: { weapon: LoadoutWeaponDefinition; isLa
           }}
           uiBackground={{
             textureMode: 'stretch',
-            texture: { src: SHOP_HUD_SHEET_SRC },
+            texture: SHOP_HUD_TEXTURE,
             uvs: STORE_CARD_SELECTION_GLOW_UVS
           }}
         />
@@ -659,7 +662,7 @@ function UpgradeCard({ weapon, isLast }: { weapon: LoadoutWeaponDefinition; isLa
         }}
         uiBackground={{
           textureMode: 'stretch',
-          texture: { src: SHOP_HUD_SHEET_SRC },
+          texture: SHOP_HUD_TEXTURE,
           uvs: STORE_UPGRADE_CARD_UVS[weapon.upgradeLevel]
         }}
       />
@@ -689,7 +692,7 @@ function UpgradeCard({ weapon, isLast }: { weapon: LoadoutWeaponDefinition; isLa
         }}
         uiBackground={{
           textureMode: 'stretch',
-          texture: { src: SHOP_HUD_SHEET_SRC },
+          texture: SHOP_HUD_TEXTURE,
           uvs: STORE_CARD_TAG_UVS
         }}
       >
@@ -734,7 +737,7 @@ function WeaponRow({ weaponType, isLast }: { weaponType: ArenaWeaponType; isLast
           }}
           uiBackground={{
             textureMode: 'stretch',
-            texture: { src: SHOP_HUD_SHEET_SRC },
+            texture: SHOP_HUD_TEXTURE,
             uvs: STORE_WEAPON_LABEL_UVS[weaponType]
           }}
         />
@@ -866,42 +869,42 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
   const priceBackground = owned
     ? {
         textureMode: 'stretch' as const,
-        texture: { src: SHOP_HUD_SHEET_SRC },
+        texture: SHOP_HUD_TEXTURE,
         uvs: STORE_OWNED_UVS
       }
     : {
         textureMode: 'stretch' as const,
-        texture: { src: SHOP_HUD_SHEET_SRC },
+        texture: SHOP_HUD_TEXTURE,
         uvs: STORE_CARD_TAG_UVS
       }
   const actionBackground = equipped
     ? {
         textureMode: 'stretch' as const,
-        texture: { src: SHOP_HUD_SHEET_SRC },
+        texture: SHOP_HUD_TEXTURE,
         uvs: STORE_EQUIPPED_UVS
       }
     : (owned
       ? {
           textureMode: 'stretch' as const,
-          texture: { src: SHOP_HUD_SHEET_SRC },
+          texture: SHOP_HUD_TEXTURE,
           uvs: STORE_EQUIP_UVS
         }
       : (showBuyButtonSprite
         ? {
             textureMode: 'stretch' as const,
-            texture: { src: SHOP_HUD_SHEET_SRC },
+            texture: SHOP_HUD_TEXTURE,
             uvs: STORE_BUY_UVS
           }
         : (showUnlockPreviousButtonSprite
           ? {
               textureMode: 'stretch' as const,
-              texture: { src: SHOP_HUD_SHEET_SRC },
+              texture: SHOP_HUD_TEXTURE,
               uvs: STORE_UNLOCK_PREVIOUS_UVS
             }
           : (showDisabledBuyButtonSprite
             ? {
                 textureMode: 'stretch' as const,
-                texture: { src: SHOP_HUD_SHEET_SRC },
+                texture: SHOP_HUD_TEXTURE,
                 uvs: STORE_BUY_DISABLED_UVS
               }
             : { color: actionBg }))))
@@ -1067,7 +1070,7 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
                   }}
                   uiBackground={{
                     textureMode: 'stretch',
-                    texture: { src: SHOP_HUD_SHEET_SRC },
+                    texture: SHOP_HUD_TEXTURE,
                     uvs: STORE_BUY_GOLD_ICON_UVS
                   }}
                 />
@@ -1178,7 +1181,7 @@ export function LobbyStoreUi() {
         }}
         uiBackground={{
           textureMode: 'stretch',
-          texture: { src: SHOP_HUD_SHEET_SRC },
+          texture: SHOP_HUD_TEXTURE,
           uvs: STORE_PANEL_UVS
         }}
       >
@@ -1202,7 +1205,7 @@ export function LobbyStoreUi() {
             }}
             uiBackground={{
               textureMode: 'stretch',
-              texture: { src: SHOP_HUD_SHEET_SRC },
+              texture: SHOP_HUD_TEXTURE,
               uvs: STORE_GOLD_UVS
             }}
           >
@@ -1240,7 +1243,7 @@ export function LobbyStoreUi() {
             }}
             uiBackground={{
               textureMode: 'stretch',
-              texture: { src: SHOP_HUD_SHEET_SRC },
+              texture: SHOP_HUD_TEXTURE,
               uvs: STORE_CLOSE_UVS
             }}
             onMouseDown={() => closeLobbyStore()}
@@ -1293,7 +1296,7 @@ export function LobbyStoreUi() {
             }}
             uiBackground={{
               textureMode: 'stretch',
-              texture: { src: SHOP_HUD_SHEET_SRC },
+              texture: SHOP_HUD_TEXTURE,
               uvs: STORE_DETAIL_BOX_UVS
             }}
           >
@@ -1317,7 +1320,7 @@ export function LobbyStoreUi() {
           }}
           uiBackground={{
             textureMode: 'stretch',
-            texture: { src: SHOP_HUD_SHEET_SRC },
+            texture: SHOP_HUD_TEXTURE,
             uvs: STORE_MESSAGE_UVS
           }}
         >
