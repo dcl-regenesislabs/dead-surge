@@ -1498,7 +1498,7 @@ const teamPanelNameWidth = isMobileRuntime ? 100 : 120
       {showLobbyHud && (
         <UiEntity
           uiTransform={{
-            position: { left: LOBBY_HUD_LEFT_MARGIN, top: LOBBY_HUD_GOLD_TOP },
+            position: { left: isMobileRuntime ? LOBBY_HUD_LEFT_MARGIN + 88 : LOBBY_HUD_LEFT_MARGIN, top: LOBBY_HUD_GOLD_TOP },
             positionType: 'absolute',
             width: LOBBY_HUD_GOLD_WIDTH,
             height: LOBBY_HUD_GOLD_HEIGHT
