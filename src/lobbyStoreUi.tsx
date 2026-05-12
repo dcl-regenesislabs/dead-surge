@@ -76,30 +76,43 @@ function getEffectiveCanvasViewport() {
   }
 }
 
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
 function getStoreScaleProfile() {
   const effectiveViewport = getEffectiveCanvasViewport()
   if (!effectiveViewport) {
     return { width: 1, height: 1, spacing: 1, font: 1, image: 1, button: 1 }
   }
-  const shortestEffectiveSide = Math.min(effectiveViewport.width, effectiveViewport.height)
-  if (shortestEffectiveSide <= 460) {
-    return { width: 1.10, height: 1.26, spacing: 1.12, font: 1.52, image: 1.40, button: 1.22 }
+  const viewportScale = Math.min(
+    effectiveViewport.width / 1920,
+    effectiveViewport.height / 1080
+  )
+  const layoutScale = clampNumber(viewportScale, 0.78, 1.12) * (isMobile() ? 1.5 : 1)
+  const fontScale = clampNumber(layoutScale * 1.03, 0.82, 1.14)
+  return {
+    width: layoutScale,
+    height: layoutScale,
+    spacing: layoutScale,
+    font: fontScale,
+    image: layoutScale,
+    button: layoutScale
   }
-  if (shortestEffectiveSide <= 540) {
-    return { width: 1.08, height: 1.20, spacing: 1.10, font: 1.40, image: 1.30, button: 1.18 }
-  }
-  if (shortestEffectiveSide <= 720) {
-    return { width: 1.04, height: 1.10, spacing: 1.06, font: 1.18, image: 1.14, button: 1.10 }
-  }
-  return { width: 1, height: 1, spacing: 1, font: 1, image: 1, button: 1 }
 }
 
 function scaleStoreUiValue(value: number, scale: number = 1): number {
   return scale === 1 ? value : Math.max(1, Math.round(value * scale))
 }
+function scaleStoreSignedUiValue(value: number, scale: number = 1): number {
+  if (scale === 1 || value === 0) return value
+  const scaled = Math.max(1, Math.round(Math.abs(value) * scale))
+  return value < 0 ? -scaled : scaled
+}
 function scaleStoreWidth(value: number): number { return scaleStoreUiValue(value, getStoreScaleProfile().width) }
 function scaleStoreHeight(value: number): number { return scaleStoreUiValue(value, getStoreScaleProfile().height) }
 function scaleStoreSpacing(value: number): number { return scaleStoreUiValue(value, getStoreScaleProfile().spacing) }
+function scaleStoreOffset(value: number): number { return scaleStoreSignedUiValue(value, getStoreScaleProfile().spacing) }
 function scaleStoreFont(value: number): number { return scaleStoreUiValue(value, getStoreScaleProfile().font) }
 function scaleStoreImage(value: number): number { return scaleStoreUiValue(value, getStoreScaleProfile().image) }
 function scaleStoreButton(value: number): number { return scaleStoreUiValue(value, getStoreScaleProfile().button) }
@@ -215,64 +228,16 @@ const WEAPON_STATS: Partial<Record<LoadoutWeaponId, { dmg: string; rate: string;
 }
 
 const WEAPON_ROWS: ArenaWeaponType[] = ['gun', 'shotgun', 'minigun']
-const SHOP_HUD_SHEET_SRC = 'assets/images/shop_hud.png'
-const SHOP_HUD_ATLAS_SCALE = 1
-const SHOP_HUD_SHEET_WIDTH = 1536
-const SHOP_HUD_SHEET_HEIGHT = 1024
-const STORE_PANEL_SOURCE_X = 6
-const STORE_PANEL_SOURCE_Y = 9
-const STORE_PANEL_SOURCE_WIDTH = 782
-const STORE_PANEL_SOURCE_HEIGHT = 654
-const STORE_MESSAGE_SOURCE_X = 16
-const STORE_MESSAGE_SOURCE_Y = 713
-const STORE_MESSAGE_SOURCE_WIDTH = 748
-const STORE_MESSAGE_SOURCE_HEIGHT = 57
+const SHOP_ATLAS_1_SRC = 'assets/images/shop_atlas_1.png'
+const SHOP_ATLAS_2_SRC = 'assets/images/shop_atlas_2.png'
+const SHOP_ATLAS_WIDTH = 1024
+const SHOP_ATLAS_HEIGHT = 1024
 const STORE_MESSAGE_RENDER_WIDTH = 748
 const STORE_MESSAGE_RENDER_HEIGHT = 53
-const STORE_GOLD_SOURCE_X = 814
-const STORE_GOLD_SOURCE_Y = 117
-const STORE_GOLD_SOURCE_WIDTH = 127
-const STORE_GOLD_SOURCE_HEIGHT = 55
 const STORE_GOLD_RENDER_WIDTH = 127
 const STORE_GOLD_RENDER_HEIGHT = 55
-const STORE_EQUIPPED_SOURCE_X = 24
-const STORE_EQUIPPED_SOURCE_Y = 789
-const STORE_EQUIPPED_SOURCE_WIDTH = 173
-const STORE_EQUIPPED_SOURCE_HEIGHT = 49
-const STORE_EQUIP_SOURCE_X = 592
-const STORE_EQUIP_SOURCE_Y = 786
-const STORE_EQUIP_SOURCE_WIDTH = 201
-const STORE_EQUIP_SOURCE_HEIGHT = 54
-const STORE_OWNED_SOURCE_X = 211
-const STORE_OWNED_SOURCE_Y = 788
-const STORE_OWNED_SOURCE_WIDTH = 186
-const STORE_OWNED_SOURCE_HEIGHT = 52
 const STORE_OWNED_RENDER_SCALE = 0.98
 const STORE_EQUIPPED_RENDER_SCALE = 1.04
-const STORE_BUY_SOURCE_X = 407
-const STORE_BUY_SOURCE_Y = 849
-const STORE_BUY_SOURCE_WIDTH = 168
-const STORE_BUY_SOURCE_HEIGHT = 53
-const STORE_BUY_DISABLED_SOURCE_X = 591
-const STORE_BUY_DISABLED_SOURCE_Y = 849
-const STORE_BUY_DISABLED_SOURCE_WIDTH = 168
-const STORE_BUY_DISABLED_SOURCE_HEIGHT = 53
-const STORE_UNLOCK_PREVIOUS_SOURCE_X = 412
-const STORE_UNLOCK_PREVIOUS_SOURCE_Y = 922
-const STORE_UNLOCK_PREVIOUS_SOURCE_WIDTH = 167
-const STORE_UNLOCK_PREVIOUS_SOURCE_HEIGHT = 41
-const STORE_BUY_GOLD_ICON_SOURCE_X = 1058
-const STORE_BUY_GOLD_ICON_SOURCE_Y = 122
-const STORE_BUY_GOLD_ICON_SOURCE_WIDTH = 44
-const STORE_BUY_GOLD_ICON_SOURCE_HEIGHT = 46
-const STORE_CARD_TAG_SOURCE_X = 406
-const STORE_CARD_TAG_SOURCE_Y = 785
-const STORE_CARD_TAG_SOURCE_WIDTH = 166
-const STORE_CARD_TAG_SOURCE_HEIGHT = 53
-const STORE_CARD_SELECTION_GLOW_SOURCE_X = 1340
-const STORE_CARD_SELECTION_GLOW_SOURCE_Y = 320
-const STORE_CARD_SELECTION_GLOW_SOURCE_WIDTH = 148
-const STORE_CARD_SELECTION_GLOW_SOURCE_HEIGHT = 182
 const STORE_UPGRADE_ROW_SOURCE_X = 987
 const STORE_UPGRADE_ROW_SOURCE_Y = 343
 const STORE_UPGRADE_ROW_SOURCE_WIDTH = 326
@@ -284,16 +249,8 @@ const STORE_UPGRADE_CARD_SOURCE_HEIGHT = 135
 const STORE_UPGRADE_CARD_RENDER_WIDTH = 110
 const STORE_UPGRADE_CARD_RENDER_HEIGHT = 135
 const STORE_WEAPON_LABEL_OFFSET_LEFT = 0
-const STORE_CLOSE_SOURCE_X = 964
-const STORE_CLOSE_SOURCE_Y = 111
-const STORE_CLOSE_SOURCE_WIDTH = 70
-const STORE_CLOSE_SOURCE_HEIGHT = 62
 const STORE_CLOSE_RENDER_WIDTH = 70
 const STORE_CLOSE_RENDER_HEIGHT = 62
-const STORE_DETAIL_BOX_SOURCE_X = 979
-const STORE_DETAIL_BOX_SOURCE_Y = 491
-const STORE_DETAIL_BOX_SOURCE_WIDTH = 250
-const STORE_DETAIL_BOX_SOURCE_HEIGHT = 419
 const STORE_DETAIL_BOX_RENDER_WIDTH = 250
 const STORE_DETAIL_BOX_RENDER_HEIGHT = 419
 const STORE_HEADER_ACTIONS_TOP = 18
@@ -301,159 +258,105 @@ const STORE_HEADER_ACTIONS_RIGHT = 32
 const STORE_PANEL_EXTRA_HEIGHT = 38
 
 type ShopAtlasUvs = [number, number, number, number, number, number, number, number]
+type ShopAtlasSprite = {
+  src: string
+  x: number
+  y: number
+  width: number
+  height: number
+  uvs: ShopAtlasUvs
+}
 
-function createShopHudUvs(x: number, y: number, width: number, height: number): ShopAtlasUvs {
-  const left = x / SHOP_HUD_SHEET_WIDTH
-  const right = (x + width) / SHOP_HUD_SHEET_WIDTH
-  const bottom = 1 - (y + height) / SHOP_HUD_SHEET_HEIGHT
-  const top = 1 - y / SHOP_HUD_SHEET_HEIGHT
+function createShopAtlasUvs(x: number, y: number, width: number, height: number): ShopAtlasUvs {
+  const left = x / SHOP_ATLAS_WIDTH
+  const right = (x + width) / SHOP_ATLAS_WIDTH
+  const bottom = 1 - (y + height) / SHOP_ATLAS_HEIGHT
+  const top = 1 - y / SHOP_ATLAS_HEIGHT
   return [left, bottom, left, top, right, top, right, bottom]
 }
 
-const STORE_PANEL_UVS = createShopHudUvs(
-  STORE_PANEL_SOURCE_X,
-  STORE_PANEL_SOURCE_Y,
-  STORE_PANEL_SOURCE_WIDTH,
-  STORE_PANEL_SOURCE_HEIGHT
-)
-const STORE_MESSAGE_UVS = createShopHudUvs(
-  STORE_MESSAGE_SOURCE_X,
-  STORE_MESSAGE_SOURCE_Y,
-  STORE_MESSAGE_SOURCE_WIDTH,
-  STORE_MESSAGE_SOURCE_HEIGHT
-)
-const STORE_GOLD_UVS = createShopHudUvs(
-  STORE_GOLD_SOURCE_X,
-  STORE_GOLD_SOURCE_Y,
-  STORE_GOLD_SOURCE_WIDTH,
-  STORE_GOLD_SOURCE_HEIGHT
-)
-const STORE_EQUIPPED_UVS = createShopHudUvs(
-  STORE_EQUIPPED_SOURCE_X,
-  STORE_EQUIPPED_SOURCE_Y,
-  STORE_EQUIPPED_SOURCE_WIDTH,
-  STORE_EQUIPPED_SOURCE_HEIGHT
-)
-const STORE_EQUIP_UVS = createShopHudUvs(
-  STORE_EQUIP_SOURCE_X,
-  STORE_EQUIP_SOURCE_Y,
-  STORE_EQUIP_SOURCE_WIDTH,
-  STORE_EQUIP_SOURCE_HEIGHT
-)
-const STORE_OWNED_UVS = createShopHudUvs(
-  STORE_OWNED_SOURCE_X,
-  STORE_OWNED_SOURCE_Y,
-  STORE_OWNED_SOURCE_WIDTH,
-  STORE_OWNED_SOURCE_HEIGHT
-)
-const STORE_BUY_UVS = createShopHudUvs(
-  STORE_BUY_SOURCE_X,
-  STORE_BUY_SOURCE_Y,
-  STORE_BUY_SOURCE_WIDTH,
-  STORE_BUY_SOURCE_HEIGHT
-)
-const STORE_BUY_DISABLED_UVS = createShopHudUvs(
-  STORE_BUY_DISABLED_SOURCE_X,
-  STORE_BUY_DISABLED_SOURCE_Y,
-  STORE_BUY_DISABLED_SOURCE_WIDTH,
-  STORE_BUY_DISABLED_SOURCE_HEIGHT
-)
-const STORE_UNLOCK_PREVIOUS_UVS = createShopHudUvs(
-  STORE_UNLOCK_PREVIOUS_SOURCE_X,
-  STORE_UNLOCK_PREVIOUS_SOURCE_Y,
-  STORE_UNLOCK_PREVIOUS_SOURCE_WIDTH,
-  STORE_UNLOCK_PREVIOUS_SOURCE_HEIGHT
-)
-const STORE_BUY_GOLD_ICON_UVS = createShopHudUvs(
-  STORE_BUY_GOLD_ICON_SOURCE_X,
-  STORE_BUY_GOLD_ICON_SOURCE_Y,
-  STORE_BUY_GOLD_ICON_SOURCE_WIDTH,
-  STORE_BUY_GOLD_ICON_SOURCE_HEIGHT
-)
-const STORE_CARD_TAG_UVS = createShopHudUvs(
-  STORE_CARD_TAG_SOURCE_X,
-  STORE_CARD_TAG_SOURCE_Y,
-  STORE_CARD_TAG_SOURCE_WIDTH,
-  STORE_CARD_TAG_SOURCE_HEIGHT
-)
-const STORE_CARD_SELECTION_GLOW_UVS = createShopHudUvs(
-  STORE_CARD_SELECTION_GLOW_SOURCE_X,
-  STORE_CARD_SELECTION_GLOW_SOURCE_Y,
-  STORE_CARD_SELECTION_GLOW_SOURCE_WIDTH,
-  STORE_CARD_SELECTION_GLOW_SOURCE_HEIGHT
-)
-const STORE_UPGRADE_ROW_UVS = createShopHudUvs(
-  STORE_UPGRADE_ROW_SOURCE_X,
-  STORE_UPGRADE_ROW_SOURCE_Y,
-  STORE_UPGRADE_ROW_SOURCE_WIDTH,
-  STORE_UPGRADE_ROW_SOURCE_HEIGHT
-)
-const STORE_UPGRADE_CARD_UVS: Record<LoadoutWeaponDefinition['upgradeLevel'], ShopAtlasUvs> = {
-  1: createShopHudUvs(
-    STORE_UPGRADE_ROW_SOURCE_X,
-    STORE_UPGRADE_ROW_SOURCE_Y,
-    STORE_UPGRADE_CARD_SOURCE_WIDTH,
-    STORE_UPGRADE_CARD_SOURCE_HEIGHT
-  ),
-  2: createShopHudUvs(
-    STORE_UPGRADE_ROW_SOURCE_X + 113,
-    STORE_UPGRADE_ROW_SOURCE_Y,
-    STORE_UPGRADE_CARD_SOURCE_WIDTH - 1,
-    STORE_UPGRADE_CARD_SOURCE_HEIGHT
-  ),
-  3: createShopHudUvs(
-    STORE_UPGRADE_ROW_SOURCE_X + 224,
-    STORE_UPGRADE_ROW_SOURCE_Y,
-    STORE_UPGRADE_CARD_SOURCE_WIDTH,
-    STORE_UPGRADE_CARD_SOURCE_HEIGHT
-  )
+function createShopAtlasSprite(src: string, x: number, y: number, width: number, height: number): ShopAtlasSprite {
+  return { src, x, y, width, height, uvs: createShopAtlasUvs(x, y, width, height) }
+}
+
+function createShopSpriteBackground(sprite: ShopAtlasSprite) {
+  return {
+    textureMode: 'stretch' as const,
+    texture: { src: sprite.src },
+    uvs: sprite.uvs
+  }
+}
+
+// Inventory of every atlas-backed sprite the shop UI currently uses.
+const SHOP_UI_SPRITES = {
+  panel: createShopAtlasSprite(SHOP_ATLAS_1_SRC, 6, 9, 782, 654),
+  message: createShopAtlasSprite(SHOP_ATLAS_1_SRC, 16, 687, 748, 57),
+  gold: createShopAtlasSprite(SHOP_ATLAS_2_SRC, 532, 48, 127, 55),
+  equipped: createShopAtlasSprite(SHOP_ATLAS_2_SRC, 295, 236, 173, 49),
+  equip: createShopAtlasSprite(SHOP_ATLAS_2_SRC, 289, 103, 201, 54),
+  owned: createShopAtlasSprite(SHOP_ATLAS_2_SRC, 482, 233, 186, 52),
+  buy: createShopAtlasSprite(SHOP_ATLAS_2_SRC, 717, 215, 168, 53),
+  buyDisabled: createShopAtlasSprite(SHOP_ATLAS_2_SRC, 717, 147, 168, 53),
+  unlockPrevious: createShopAtlasSprite(SHOP_ATLAS_2_SRC, 532, 126, 167, 41),
+  buyGoldIcon: createShopAtlasSprite(SHOP_ATLAS_1_SRC, 880, 691, 60, 60),
+  cardTag: createShopAtlasSprite(SHOP_ATLAS_2_SRC, 716, 47, 166, 53),
+  cardSelectionGlow: createShopAtlasSprite(SHOP_ATLAS_1_SRC, 621, 803, 148, 182),
+  upgradeCards: {
+    1: createShopAtlasSprite(SHOP_ATLAS_1_SRC, 278, 826, 102, 135),
+    2: createShopAtlasSprite(SHOP_ATLAS_1_SRC, 391, 826, 101, 135),
+    3: createShopAtlasSprite(SHOP_ATLAS_1_SRC, 502, 826, 102, 135)
+  },
+  weaponLabels: {
+    gun: createShopAtlasSprite(SHOP_ATLAS_1_SRC, 853, 33, 131, 130),
+    shotgun: createShopAtlasSprite(SHOP_ATLAS_1_SRC, 852, 175, 132, 129),
+    minigun: createShopAtlasSprite(SHOP_ATLAS_1_SRC, 852, 318, 131, 128)
+  },
+  close: createShopAtlasSprite(SHOP_ATLAS_1_SRC, 147, 795, 70, 62),
+  detailBox: createShopAtlasSprite(SHOP_ATLAS_2_SRC, 11, 39, 250, 419)
+} as const
+
+const STORE_PANEL_SOURCE_WIDTH = SHOP_UI_SPRITES.panel.width
+const STORE_PANEL_SOURCE_HEIGHT = SHOP_UI_SPRITES.panel.height
+const STORE_MESSAGE_SOURCE_WIDTH = SHOP_UI_SPRITES.message.width
+const STORE_MESSAGE_SOURCE_HEIGHT = SHOP_UI_SPRITES.message.height
+const STORE_GOLD_SOURCE_WIDTH = SHOP_UI_SPRITES.gold.width
+const STORE_GOLD_SOURCE_HEIGHT = SHOP_UI_SPRITES.gold.height
+const STORE_EQUIPPED_SOURCE_WIDTH = SHOP_UI_SPRITES.equipped.width
+const STORE_EQUIPPED_SOURCE_HEIGHT = SHOP_UI_SPRITES.equipped.height
+const STORE_EQUIP_SOURCE_WIDTH = SHOP_UI_SPRITES.equip.width
+const STORE_EQUIP_SOURCE_HEIGHT = SHOP_UI_SPRITES.equip.height
+const STORE_OWNED_SOURCE_WIDTH = SHOP_UI_SPRITES.owned.width
+const STORE_OWNED_SOURCE_HEIGHT = SHOP_UI_SPRITES.owned.height
+const STORE_BUY_SOURCE_WIDTH = SHOP_UI_SPRITES.buy.width
+const STORE_BUY_SOURCE_HEIGHT = SHOP_UI_SPRITES.buy.height
+const STORE_BUY_DISABLED_SOURCE_WIDTH = SHOP_UI_SPRITES.buyDisabled.width
+const STORE_BUY_DISABLED_SOURCE_HEIGHT = SHOP_UI_SPRITES.buyDisabled.height
+const STORE_UNLOCK_PREVIOUS_SOURCE_WIDTH = SHOP_UI_SPRITES.unlockPrevious.width
+const STORE_UNLOCK_PREVIOUS_SOURCE_HEIGHT = SHOP_UI_SPRITES.unlockPrevious.height
+const STORE_CARD_TAG_SOURCE_WIDTH = SHOP_UI_SPRITES.cardTag.width
+const STORE_CARD_TAG_SOURCE_HEIGHT = SHOP_UI_SPRITES.cardTag.height
+const STORE_CARD_SELECTION_GLOW_SOURCE_WIDTH = SHOP_UI_SPRITES.cardSelectionGlow.width
+const STORE_CARD_SELECTION_GLOW_SOURCE_HEIGHT = SHOP_UI_SPRITES.cardSelectionGlow.height
+const STORE_CLOSE_SOURCE_WIDTH = SHOP_UI_SPRITES.close.width
+const STORE_CLOSE_SOURCE_HEIGHT = SHOP_UI_SPRITES.close.height
+const STORE_DETAIL_BOX_SOURCE_WIDTH = SHOP_UI_SPRITES.detailBox.width
+const STORE_DETAIL_BOX_SOURCE_HEIGHT = SHOP_UI_SPRITES.detailBox.height
+
+const STORE_UPGRADE_CARD_SPRITES: Record<LoadoutWeaponDefinition['upgradeLevel'], ShopAtlasSprite> = {
+  1: SHOP_UI_SPRITES.upgradeCards[1],
+  2: SHOP_UI_SPRITES.upgradeCards[2],
+  3: SHOP_UI_SPRITES.upgradeCards[3]
 }
 const STORE_WEAPON_LABEL_SPRITES: Record<ArenaWeaponType, {
-  x: number
-  y: number
-  w: number
-  h: number
+  sprite: ShopAtlasSprite
   renderW: number
   renderH: number
   offsetTop?: number
 }> = {
-  gun: { x: 813, y: 348, w: 140, h: 130, renderW: 140, renderH: 130, offsetTop: -4 },
-  shotgun: { x: 813, y: 490, w: 140, h: 130, renderW: 140, renderH: 130, offsetTop: -4 },
-  minigun: { x: 813, y: 633, w: 140, h: 130, renderW: 140, renderH: 130, offsetTop: -4 }
+  gun: { sprite: SHOP_UI_SPRITES.weaponLabels.gun, renderW: 140, renderH: 130, offsetTop: -4 },
+  shotgun: { sprite: SHOP_UI_SPRITES.weaponLabels.shotgun, renderW: 140, renderH: 130, offsetTop: -4 },
+  minigun: { sprite: SHOP_UI_SPRITES.weaponLabels.minigun, renderW: 140, renderH: 130, offsetTop: -4 }
 }
-
-const STORE_WEAPON_LABEL_UVS: Record<ArenaWeaponType, ShopAtlasUvs> = {
-  gun: createShopHudUvs(
-    STORE_WEAPON_LABEL_SPRITES.gun.x * SHOP_HUD_ATLAS_SCALE,
-    STORE_WEAPON_LABEL_SPRITES.gun.y * SHOP_HUD_ATLAS_SCALE,
-    STORE_WEAPON_LABEL_SPRITES.gun.w * SHOP_HUD_ATLAS_SCALE,
-    STORE_WEAPON_LABEL_SPRITES.gun.h * SHOP_HUD_ATLAS_SCALE
-  ),
-  shotgun: createShopHudUvs(
-    STORE_WEAPON_LABEL_SPRITES.shotgun.x * SHOP_HUD_ATLAS_SCALE,
-    STORE_WEAPON_LABEL_SPRITES.shotgun.y * SHOP_HUD_ATLAS_SCALE,
-    STORE_WEAPON_LABEL_SPRITES.shotgun.w * SHOP_HUD_ATLAS_SCALE,
-    STORE_WEAPON_LABEL_SPRITES.shotgun.h * SHOP_HUD_ATLAS_SCALE
-  ),
-  minigun: createShopHudUvs(
-    STORE_WEAPON_LABEL_SPRITES.minigun.x * SHOP_HUD_ATLAS_SCALE,
-    STORE_WEAPON_LABEL_SPRITES.minigun.y * SHOP_HUD_ATLAS_SCALE,
-    STORE_WEAPON_LABEL_SPRITES.minigun.w * SHOP_HUD_ATLAS_SCALE,
-    STORE_WEAPON_LABEL_SPRITES.minigun.h * SHOP_HUD_ATLAS_SCALE
-  )
-}
-const STORE_CLOSE_UVS = createShopHudUvs(
-  STORE_CLOSE_SOURCE_X,
-  STORE_CLOSE_SOURCE_Y,
-  STORE_CLOSE_SOURCE_WIDTH,
-  STORE_CLOSE_SOURCE_HEIGHT
-)
-const STORE_DETAIL_BOX_UVS = createShopHudUvs(
-  STORE_DETAIL_BOX_SOURCE_X,
-  STORE_DETAIL_BOX_SOURCE_Y,
-  STORE_DETAIL_BOX_SOURCE_WIDTH,
-  STORE_DETAIL_BOX_SOURCE_HEIGHT
-)
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -512,65 +415,93 @@ function getContainedWeaponImageSize(weaponId: LoadoutWeaponId, maxWidth: number
 
 function getStoreMetrics() {
   const actualMobile = isMobile()
-  const rowCardAreaW = STORE_UPGRADE_ROW_RENDER_WIDTH
-  const rowCardAreaH = STORE_UPGRADE_ROW_RENDER_HEIGHT
-  const cardW = scaleStoreWidth(actualMobile ? STORE_UPGRADE_CARD_RENDER_WIDTH + 4 : STORE_UPGRADE_CARD_RENDER_WIDTH)
-  const cardH = scaleStoreHeight(STORE_UPGRADE_CARD_RENDER_HEIGHT)
-  const cardGap = scaleStoreSpacing(1)
-  const cardImageBox = scaleStoreImage(74)
-  const cardImageAreaH = scaleStoreHeight(96)
+  const storePanelBaseWidth = scaleStoreWidth(STORE_PANEL_SOURCE_WIDTH)
+  const storePanelMaxW = actualMobile ? Math.round(storePanelBaseWidth * 1.08) : storePanelBaseWidth
+  const safeHorizontalMargin = scaleStoreSpacing(actualMobile ? 18 : 24)
+  const cardWBase = scaleStoreWidth(actualMobile ? STORE_UPGRADE_CARD_RENDER_WIDTH + 4 : STORE_UPGRADE_CARD_RENDER_WIDTH)
+  const cardHBase = scaleStoreHeight(STORE_UPGRADE_CARD_RENDER_HEIGHT)
+  const cardGapBase = scaleStoreSpacing(1)
+  const rowCardAreaWBase = cardWBase * 3 + cardGapBase * 2
+  const rowCardAreaHBase = cardHBase
+  const cardImageBoxBase = scaleStoreImage(74)
+  const cardImageAreaHBase = scaleStoreHeight(96)
   const cardNameAreaH = 0
-  const rowGap = scaleStoreSpacing(7)
+  const rowGapBase = scaleStoreSpacing(7)
   // Intentionally keep desktop-style row labels and sizing logic on all devices for this shop layout.
   const mobile = false
-  const rowLabelW = Math.max(
-    STORE_WEAPON_LABEL_SPRITES.gun.renderW,
-    STORE_WEAPON_LABEL_SPRITES.shotgun.renderW,
-    STORE_WEAPON_LABEL_SPRITES.minigun.renderW
+  const rowLabelWBase = Math.max(
+    scaleStoreWidth(STORE_WEAPON_LABEL_SPRITES.gun.renderW),
+    scaleStoreWidth(STORE_WEAPON_LABEL_SPRITES.shotgun.renderW),
+    scaleStoreWidth(STORE_WEAPON_LABEL_SPRITES.minigun.renderW)
   )
-  const rowLabelGap = scaleStoreSpacing(10)
-  const detailPanelW = scaleStoreWidth(175)
+  const rowLabelGapBase = scaleStoreSpacing(10)
+  const detailPanelWBase = scaleStoreWidth(175)
+  const detailTitleHBase = scaleStoreHeight(34)
+  const detailSubtitleHBase = scaleStoreHeight(20)
+  const detailBoxWidthBase = scaleStoreWidth(STORE_DETAIL_BOX_RENDER_WIDTH)
+  const detailBoxHeightBase = scaleStoreHeight(STORE_DETAIL_BOX_RENDER_HEIGHT)
+  const detailBoxGapBase = scaleStoreSpacing(10)
+  const naturalContentWidth = rowLabelWBase + rowLabelGapBase + rowCardAreaWBase + detailBoxGapBase + detailBoxWidthBase
+  const safeContentWidth = Math.max(1, storePanelMaxW - safeHorizontalMargin * 2)
+  const contentFitScale = Math.min(1, safeContentWidth / naturalContentWidth)
+  const fitDimension = (value: number) => Math.max(1, Math.round(value * contentFitScale))
+
+  const rowCardAreaW = fitDimension(rowCardAreaWBase)
+  const rowCardAreaH = fitDimension(rowCardAreaHBase)
+  const cardW = fitDimension(cardWBase)
+  const cardH = fitDimension(cardHBase)
+  const cardGap = fitDimension(cardGapBase)
+  const cardImageBox = fitDimension(cardImageBoxBase)
+  const cardImageAreaH = fitDimension(cardImageAreaHBase)
+  const rowGap = fitDimension(rowGapBase)
+  const rowLabelW = fitDimension(rowLabelWBase)
+  const rowLabelGap = fitDimension(rowLabelGapBase)
+  const detailPanelW = fitDimension(detailPanelWBase)
+  const detailTitleH = fitDimension(detailTitleHBase)
+  const detailSubtitleH = fitDimension(detailSubtitleHBase)
+  const detailBoxBaseWidth = fitDimension(detailBoxWidthBase)
+  const detailBoxBaseHeight = fitDimension(detailBoxHeightBase)
+  const detailBoxGap = fitDimension(detailBoxGapBase)
 
   // Stat row widths derived from panel so they always add up (panel - 24 panel pad - 26 row pad - 16 gaps)
-  const statNoGap = detailPanelW - 24 - 26 - 16
+  const statNoGap = detailPanelW - fitDimension(24) - fitDimension(26) - fitDimension(16)
   const statLabelW = Math.round(statNoGap * 0.379)
   const statValueW = Math.round(statNoGap * 0.265)
   const statBarW   = statNoGap - statLabelW - statValueW
 
-  const detailTitleH = scaleStoreHeight(34)
-  const detailSubtitleH = scaleStoreHeight(20)
-  const storePanelMaxW = actualMobile ? Math.round(STORE_PANEL_SOURCE_WIDTH * 1.18) : STORE_PANEL_SOURCE_WIDTH
   const storePanelBaseHeight = actualMobile
-    ? Math.round(STORE_PANEL_SOURCE_HEIGHT * (storePanelMaxW / STORE_PANEL_SOURCE_WIDTH) * 0.94)
-    : STORE_PANEL_SOURCE_HEIGHT
+    ? Math.round(scaleStoreHeight(STORE_PANEL_SOURCE_HEIGHT) * (storePanelMaxW / storePanelBaseWidth) * 0.94)
+    : scaleStoreHeight(STORE_PANEL_SOURCE_HEIGHT)
   const storeBodyGap = 0
   const gridColumns = 3
   const leftGridW = rowLabelW + rowLabelGap + rowCardAreaW
-  const storeContentW = leftGridW
-  const detailBoxSpanW = STORE_DETAIL_BOX_RENDER_WIDTH
-  const messageSpanW = leftGridW + detailBoxSpanW + scaleStoreSpacing(38)
   const storeGridHeight = cardH * WEAPON_ROWS.length + rowGap * (WEAPON_ROWS.length - 1)
-  const detailBoxScale = actualMobile ? storeGridHeight / STORE_DETAIL_BOX_RENDER_HEIGHT : 1
-  const detailBoxRenderWidth = Math.round(STORE_DETAIL_BOX_RENDER_WIDTH * detailBoxScale)
-  const detailBoxRenderHeight = Math.round(STORE_DETAIL_BOX_RENDER_HEIGHT * detailBoxScale)
+  const detailBoxScale = actualMobile ? storeGridHeight / detailBoxBaseHeight : 1
+  const detailBoxRenderWidth = Math.round(detailBoxBaseWidth * detailBoxScale)
+  const detailBoxRenderHeight = Math.round(detailBoxBaseHeight * detailBoxScale)
+  const storeContentW = leftGridW + detailBoxGap + detailBoxRenderWidth
+  const detailPanelFitScale = detailPanelW / Math.max(1, detailPanelWBase)
+  const messageWidthCompensation = fitDimension(18)
   const storeControlsHeight = scaleStoreButton(34)
   const storeBodyMarginTop = scaleStoreSpacing(28)
-  const storeMessageWidth = leftGridW + detailBoxRenderWidth + scaleStoreSpacing(38)
-  const storeMessageHeight = STORE_MESSAGE_RENDER_HEIGHT
+  const storeMessageWidth = storeContentW + messageWidthCompensation
+  const storeMessageHeight = scaleStoreHeight(STORE_MESSAGE_RENDER_HEIGHT)
   const storeMessageMarginTop = scaleStoreSpacing(6)
   const storeMessageMarginBottom = scaleStoreSpacing(0)
   const storePanelVerticalPadding = scaleStoreSpacing(0)
   const storeBodyHeight = storeGridHeight + scaleStoreSpacing(10)
   const storePanelContentH = storeControlsHeight + storeBodyMarginTop + storeBodyHeight + storeMessageMarginTop + storeMessageHeight + storeMessageMarginBottom + storePanelVerticalPadding
-  const storePanelHeight = Math.max(storePanelBaseHeight + STORE_PANEL_EXTRA_HEIGHT, storePanelContentH)
+  const storePanelHeight = Math.max(storePanelBaseHeight + scaleStoreHeight(STORE_PANEL_EXTRA_HEIGHT), storePanelContentH)
 
   return {
     CARD_W: cardW, CARD_H: cardH, CARD_GAP: cardGap, ROW_CARD_AREA_W: rowCardAreaW, ROW_CARD_AREA_H: rowCardAreaH,
     CARD_IMAGE_BOX: cardImageBox, CARD_IMAGE_AREA_H: cardImageAreaH, CARD_NAME_AREA_H: cardNameAreaH,
     ROW_GAP: rowGap, ROW_LABEL_W: rowLabelW, ROW_LABEL_GAP: rowLabelGap,
     DETAIL_PANEL_W: detailPanelW, DETAIL_TITLE_H: detailTitleH, DETAIL_SUBTITLE_H: detailSubtitleH,
+    DETAIL_PANEL_FIT_SCALE: detailPanelFitScale,
     STORE_PANEL_MAX_W: storePanelMaxW, STORE_BODY_GAP: storeBodyGap,
     STORE_DETAIL_BOX_RENDER_WIDTH: detailBoxRenderWidth, STORE_DETAIL_BOX_RENDER_HEIGHT: detailBoxRenderHeight,
+    STORE_DETAIL_BOX_GAP: detailBoxGap,
     LEFT_GRID_W: leftGridW, STORE_CONTENT_W: storeContentW, STORE_GRID_HEIGHT: storeGridHeight, STORE_PANEL_HEIGHT: storePanelHeight,
     STORE_BODY_MARGIN_TOP: storeBodyMarginTop,
     STORE_MESSAGE_WIDTH: storeMessageWidth, STORE_MESSAGE_HEIGHT: storeMessageHeight,
@@ -597,7 +528,7 @@ function UpgradeCard({ weapon, isLast }: { weapon: LoadoutWeaponDefinition; isLa
   const selectionGlowHeight = Math.round(selectionGlowFrameHeight * (STORE_CARD_SELECTION_GLOW_SOURCE_HEIGHT / 142))
   const selectionGlowLeft = Math.round((CARD_W - selectionGlowWidth) * 0.5) + (
     weapon.upgradeLevel === 1
-      ? (ACTUAL_MOBILE ? -3 : scaleStoreSpacing(-3))
+      ? scaleStoreOffset(-3)
       : 0
   )
   const selectionGlowTop = Math.round((CARD_H - selectionGlowHeight) * 0.5)
@@ -641,13 +572,11 @@ function UpgradeCard({ weapon, isLast }: { weapon: LoadoutWeaponDefinition; isLa
             position: { top: selectionGlowTop, left: selectionGlowLeft },
             width: selectionGlowWidth,
             height: selectionGlowHeight,
-          }}
-          uiBackground={{
-            textureMode: 'stretch',
-            texture: { src: SHOP_HUD_SHEET_SRC },
-            uvs: STORE_CARD_SELECTION_GLOW_UVS
-          }}
-        />
+        }}
+        uiBackground={{
+          ...createShopSpriteBackground(SHOP_UI_SPRITES.cardSelectionGlow)
+        }}
+      />
       )}
 
       <UiEntity
@@ -658,9 +587,7 @@ function UpgradeCard({ weapon, isLast }: { weapon: LoadoutWeaponDefinition; isLa
           height: CARD_H,
         }}
         uiBackground={{
-          textureMode: 'stretch',
-          texture: { src: SHOP_HUD_SHEET_SRC },
-          uvs: STORE_UPGRADE_CARD_UVS[weapon.upgradeLevel]
+          ...createShopSpriteBackground(STORE_UPGRADE_CARD_SPRITES[weapon.upgradeLevel])
         }}
       />
 
@@ -670,7 +597,7 @@ function UpgradeCard({ weapon, isLast }: { weapon: LoadoutWeaponDefinition; isLa
       >
         {imageSrc ? (
           <UiEntity
-            uiTransform={{ width: cardImageSize.width, height: cardImageSize.height, margin: { top: -30 } }}
+            uiTransform={{ width: cardImageSize.width, height: cardImageSize.height, margin: { top: -scaleStoreHeight(30) } }}
             uiBackground={{ textureMode: 'stretch', texture: { src: imageSrc } }}
           />
         ) : (
@@ -688,9 +615,7 @@ function UpgradeCard({ weapon, isLast }: { weapon: LoadoutWeaponDefinition; isLa
           justifyContent: 'center',
         }}
         uiBackground={{
-          textureMode: 'stretch',
-          texture: { src: SHOP_HUD_SHEET_SRC },
-          uvs: STORE_CARD_TAG_UVS
+          ...createShopSpriteBackground(SHOP_UI_SPRITES.cardTag)
         }}
       >
         <Label
@@ -728,14 +653,12 @@ function WeaponRow({ weaponType, isLast }: { weaponType: ArenaWeaponType; isLast
       >
         <UiEntity
           uiTransform={{
-            width: labelSprite.renderW,
-            height: labelSprite.renderH,
-            margin: { top: labelSprite.offsetTop ?? 0 }
+            width: scaleStoreWidth(labelSprite.renderW),
+            height: scaleStoreHeight(labelSprite.renderH),
+            margin: { top: scaleStoreOffset(labelSprite.offsetTop ?? 0) }
           }}
           uiBackground={{
-            textureMode: 'stretch',
-            texture: { src: SHOP_HUD_SHEET_SRC },
-            uvs: STORE_WEAPON_LABEL_UVS[weaponType]
+            ...createShopSpriteBackground(labelSprite.sprite)
           }}
         />
       </UiEntity>
@@ -791,7 +714,7 @@ function StatRow({ label, value, statKey, labelW, barW, valueW }: {
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          margin: { top: -8, bottom: scaleStoreSpacing(8) }
+          margin: { top: scaleStoreOffset(-8), bottom: scaleStoreSpacing(8) }
         }}
       >
         <Label
@@ -832,7 +755,18 @@ function StatRow({ label, value, statKey, labelW, barW, valueW }: {
 
 function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefinition; embedded?: boolean }) {
   const ACTUAL_MOBILE = isMobile()
-  const { DETAIL_PANEL_W, DETAIL_TITLE_H, DETAIL_SUBTITLE_H, STORE_GRID_HEIGHT, STAT_LABEL_W, STAT_BAR_W, STAT_VALUE_W, MOBILE } = getStoreMetrics()
+  const {
+    DETAIL_PANEL_W,
+    DETAIL_TITLE_H,
+    DETAIL_SUBTITLE_H,
+    DETAIL_PANEL_FIT_SCALE,
+    STORE_DETAIL_BOX_RENDER_WIDTH,
+    STORE_GRID_HEIGHT,
+    STAT_LABEL_W,
+    STAT_BAR_W,
+    STAT_VALUE_W,
+    MOBILE
+  } = getStoreMetrics()
   const owned = isLoadoutWeaponOwned(weapon.id)
   const equipped = isLoadoutWeaponEquipped(weapon.id)
   const unlocked = isPreviousOwned(weapon)
@@ -857,6 +791,7 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
   const showBuyButtonSprite = !owned && unlocked && canAfford
   const showUnlockPreviousButtonSprite = !owned && !unlocked
   const showDisabledBuyButtonSprite = !owned && unlocked && !canAfford
+  const showEquipActionText = owned && !equipped
   const actionBg = owned
     ? (equipped ? C.btnEquipped : C.btnEquip)
     : (!unlocked ? C.btnLocked : (canAfford ? C.btnBuy : C.btnLocked))
@@ -864,46 +799,18 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
     ? (equipped ? C.textGreen : C.textWhite)
     : (!unlocked || !canAfford ? C.textLocked : C.textWhite)
   const priceBackground = owned
-    ? {
-        textureMode: 'stretch' as const,
-        texture: { src: SHOP_HUD_SHEET_SRC },
-        uvs: STORE_OWNED_UVS
-      }
-    : {
-        textureMode: 'stretch' as const,
-        texture: { src: SHOP_HUD_SHEET_SRC },
-        uvs: STORE_CARD_TAG_UVS
-      }
+    ? createShopSpriteBackground(SHOP_UI_SPRITES.owned)
+    : { color: Color4.create(17 / 255, 44 / 255, 27 / 255, 1) }
   const actionBackground = equipped
-    ? {
-        textureMode: 'stretch' as const,
-        texture: { src: SHOP_HUD_SHEET_SRC },
-        uvs: STORE_EQUIPPED_UVS
-      }
+    ? createShopSpriteBackground(SHOP_UI_SPRITES.equipped)
     : (owned
-      ? {
-          textureMode: 'stretch' as const,
-          texture: { src: SHOP_HUD_SHEET_SRC },
-          uvs: STORE_EQUIP_UVS
-        }
+      ? createShopSpriteBackground(SHOP_UI_SPRITES.equip)
       : (showBuyButtonSprite
-        ? {
-            textureMode: 'stretch' as const,
-            texture: { src: SHOP_HUD_SHEET_SRC },
-            uvs: STORE_BUY_UVS
-          }
+        ? createShopSpriteBackground(SHOP_UI_SPRITES.buy)
         : (showUnlockPreviousButtonSprite
-          ? {
-              textureMode: 'stretch' as const,
-              texture: { src: SHOP_HUD_SHEET_SRC },
-              uvs: STORE_UNLOCK_PREVIOUS_UVS
-            }
+          ? createShopSpriteBackground(SHOP_UI_SPRITES.unlockPrevious)
           : (showDisabledBuyButtonSprite
-            ? {
-                textureMode: 'stretch' as const,
-                texture: { src: SHOP_HUD_SHEET_SRC },
-                uvs: STORE_BUY_DISABLED_UVS
-              }
+            ? createShopSpriteBackground(SHOP_UI_SPRITES.buyDisabled)
             : { color: actionBg }))))
   const actionFontSize = scaleStoreFont(
     MOBILE
@@ -927,6 +834,38 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
     } : (!owned && unlocked && !canAfford ? () => {
       triggerDeniedPriceShake(weapon.id)
     } : undefined))
+  const fitDetailWidth = (value: number) => Math.max(1, Math.round(value * DETAIL_PANEL_FIT_SCALE))
+  const fitDetailHeight = (value: number) => Math.max(1, Math.round(value * DETAIL_PANEL_FIT_SCALE))
+  const detailBadgeMaxWidth = Math.round((embedded ? STORE_DETAIL_BOX_RENDER_WIDTH : DETAIL_PANEL_W) * 0.72)
+  const detailActionMaxWidth = Math.round((embedded ? STORE_DETAIL_BOX_RENDER_WIDTH : DETAIL_PANEL_W) * 0.78)
+  const ownedBadgeWidth = Math.min(
+    detailBadgeMaxWidth,
+    Math.round(fitDetailWidth(STORE_OWNED_SOURCE_WIDTH) * (ACTUAL_MOBILE ? 1.10 : STORE_OWNED_RENDER_SCALE))
+  )
+  const buyPriceBadgeWidth = Math.min(
+    detailBadgeMaxWidth,
+    Math.round(fitDetailWidth(STORE_CARD_TAG_SOURCE_WIDTH) * (ACTUAL_MOBILE ? 1.02 : 0.9))
+  )
+  const equippedActionWidth = Math.min(
+    detailActionMaxWidth,
+    Math.round(fitDetailWidth(STORE_EQUIPPED_SOURCE_WIDTH) * (ACTUAL_MOBILE ? 1.12 : STORE_EQUIPPED_RENDER_SCALE))
+  )
+  const equipActionWidth = Math.min(
+    detailActionMaxWidth,
+    Math.round(fitDetailWidth(STORE_EQUIP_SOURCE_WIDTH) * (ACTUAL_MOBILE ? 1.08 : 1))
+  )
+  const buyActionWidth = Math.min(
+    detailActionMaxWidth,
+    Math.round(fitDetailWidth(STORE_BUY_SOURCE_WIDTH) * (ACTUAL_MOBILE ? 1.10 : 1))
+  )
+  const buyDisabledActionWidth = Math.min(
+    detailActionMaxWidth,
+    Math.round(fitDetailWidth(STORE_BUY_DISABLED_SOURCE_WIDTH) * (ACTUAL_MOBILE ? 1.10 : 1))
+  )
+  const unlockPreviousActionWidth = Math.min(
+    detailActionMaxWidth,
+    Math.round(fitDetailWidth(STORE_UNLOCK_PREVIOUS_SOURCE_WIDTH) * (ACTUAL_MOBILE ? 1.24 : 1))
+  )
 
   return (
     <UiEntity
@@ -1009,7 +948,7 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
           height: detailStatsSectionH,
           justifyContent: 'flex-start',
           flexShrink: 0,
-          margin: { top: -10, bottom: embedded ? 0 : scaleStoreSpacing(8) }
+          margin: { top: scaleStoreOffset(-10), bottom: embedded ? 0 : scaleStoreSpacing(8) }
         }}
       >
         <StatRow label="Damage"    value={stats.dmg}   statKey="dmg"   labelW={STAT_LABEL_W} barW={STAT_BAR_W} valueW={STAT_VALUE_W} />
@@ -1034,11 +973,11 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
             key={`price-badge-${weapon.id}`}
             uiTransform={{
               width: owned
-                ? Math.round(STORE_OWNED_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.10 : STORE_OWNED_RENDER_SCALE))
-                : Math.round(STORE_CARD_TAG_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.02 : 0.9)),
+                ? ownedBadgeWidth
+                : buyPriceBadgeWidth,
               height: owned
-                ? Math.round((STORE_OWNED_SOURCE_HEIGHT + 10) * (ACTUAL_MOBILE ? 0.92 : STORE_OWNED_RENDER_SCALE))
-                : Math.round(STORE_CARD_TAG_SOURCE_HEIGHT * (ACTUAL_MOBILE ? 0.92 : 0.9)),
+                ? Math.round(fitDetailHeight(STORE_OWNED_SOURCE_HEIGHT + 10) * (ACTUAL_MOBILE ? 0.92 : STORE_OWNED_RENDER_SCALE))
+                : Math.round(fitDetailHeight(STORE_CARD_TAG_SOURCE_HEIGHT) * (ACTUAL_MOBILE ? 0.92 : 0.9)),
               alignItems: 'center',
               justifyContent: 'center',
               margin: { left: deniedPriceShakeOffset, bottom: ACTUAL_MOBILE ? scaleStoreSpacing(2) : scaleStoreSpacing(4) },
@@ -1058,19 +997,6 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
                   padding: { left: scaleStoreSpacing(10), right: scaleStoreSpacing(10) }
                 }}
               >
-                <UiEntity
-                  uiTransform={{
-                    width: scaleStoreImage(24),
-                    height: scaleStoreImage(24),
-                    flexShrink: 0,
-                    margin: { right: scaleStoreSpacing(6) }
-                  }}
-                  uiBackground={{
-                    textureMode: 'stretch',
-                    texture: { src: SHOP_HUD_SHEET_SRC },
-                    uvs: STORE_BUY_GOLD_ICON_UVS
-                  }}
-                />
                 <Label
                   value={`${weapon.priceGold} G`}
                   fontSize={scaleStoreFont(MOBILE ? 18 : 19)}
@@ -1085,24 +1011,28 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
 
         <UiEntity
           uiTransform={{
-            width: (equipped || owned)
-              ? Math.round(STORE_EQUIPPED_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.12 : STORE_EQUIPPED_RENDER_SCALE))
+            width: equipped
+              ? equippedActionWidth
+              : (owned
+                ? equipActionWidth
               : (showBuyButtonSprite
-                ? Math.round(STORE_BUY_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.10 : 1))
+                ? buyActionWidth
                 : (showDisabledBuyButtonSprite
-                  ? Math.round(STORE_BUY_DISABLED_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.10 : 1))
+                  ? buyDisabledActionWidth
                   : (showUnlockPreviousButtonSprite
-                    ? Math.round(STORE_UNLOCK_PREVIOUS_SOURCE_WIDTH * (ACTUAL_MOBILE ? 1.24 : 1))
-                    : '88%'))),
-            height: (equipped || owned)
-              ? Math.round((STORE_EQUIPPED_SOURCE_HEIGHT + 6) * (ACTUAL_MOBILE ? 0.92 : 1))
+                    ? unlockPreviousActionWidth
+                    : '88%')))),
+            height: equipped
+              ? Math.round(fitDetailHeight(STORE_EQUIPPED_SOURCE_HEIGHT + 6) * (ACTUAL_MOBILE ? 0.92 : 1))
+              : (owned
+                ? Math.round(fitDetailHeight(STORE_EQUIP_SOURCE_HEIGHT) * (ACTUAL_MOBILE ? 0.92 : 1))
               : (showBuyButtonSprite
-                ? Math.round(STORE_BUY_SOURCE_HEIGHT * (ACTUAL_MOBILE ? 0.92 : 1))
+                ? Math.round(fitDetailHeight(STORE_BUY_SOURCE_HEIGHT) * (ACTUAL_MOBILE ? 0.92 : 1))
                 : (showDisabledBuyButtonSprite
-                  ? Math.round(STORE_BUY_DISABLED_SOURCE_HEIGHT * (ACTUAL_MOBILE ? 0.92 : 1))
+                  ? Math.round(fitDetailHeight(STORE_BUY_DISABLED_SOURCE_HEIGHT) * (ACTUAL_MOBILE ? 0.92 : 1))
                   : (showUnlockPreviousButtonSprite
-                    ? Math.round(STORE_UNLOCK_PREVIOUS_SOURCE_HEIGHT * (ACTUAL_MOBILE ? 1.14 : 1))
-                    : scaleStoreButton(MOBILE ? 40 : 46)))),
+                    ? Math.round(fitDetailHeight(STORE_UNLOCK_PREVIOUS_SOURCE_HEIGHT) * (ACTUAL_MOBILE ? 1.14 : 1))
+                    : scaleStoreButton(MOBILE ? 40 : 46))))),
             borderRadius: 10,
             alignItems: 'center',
             justifyContent: 'center',
@@ -1111,6 +1041,13 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
           uiBackground={actionBackground}
           onMouseDown={actionHandler}
         >
+          {showEquipActionText && (
+            <Label
+              value={actionLabel}
+              fontSize={actionFontSize}
+              color={actionTextColor}
+            />
+          )}
           {!showBuyButtonSprite && !showUnlockPreviousButtonSprite && !showDisabledBuyButtonSprite && !owned && !equipped && (
             <Label
               value={actionLabel}
@@ -1135,6 +1072,7 @@ export function LobbyStoreUi() {
     LEFT_GRID_W,
     STORE_DETAIL_BOX_RENDER_WIDTH,
     STORE_DETAIL_BOX_RENDER_HEIGHT,
+    STORE_DETAIL_BOX_GAP,
     STORE_BODY_MARGIN_TOP,
     STORE_PANEL_HEIGHT,
     STORE_MESSAGE_WIDTH,
@@ -1171,23 +1109,21 @@ export function LobbyStoreUi() {
           padding: {
             top: scaleStoreSpacing(74),
             bottom: scaleStoreSpacing(14),
-            left: ACTUAL_MOBILE ? scaleStoreSpacing(0) : scaleStoreSpacing(2),
+            left: ACTUAL_MOBILE ? scaleStoreSpacing(2) : scaleStoreSpacing(2),
             right: ACTUAL_MOBILE ? scaleStoreSpacing(2) : scaleStoreSpacing(8)
           },
           borderRadius: 14,
         }}
         uiBackground={{
-          textureMode: 'stretch',
-          texture: { src: SHOP_HUD_SHEET_SRC },
-          uvs: STORE_PANEL_UVS
+          ...createShopSpriteBackground(SHOP_UI_SPRITES.panel)
         }}
       >
         <UiEntity
           uiTransform={{
             positionType: 'absolute',
             position: {
-              top: ACTUAL_MOBILE ? STORE_HEADER_ACTIONS_TOP + scaleStoreSpacing(10) : STORE_HEADER_ACTIONS_TOP,
-              right: STORE_HEADER_ACTIONS_RIGHT
+              top: ACTUAL_MOBILE ? scaleStoreSpacing(STORE_HEADER_ACTIONS_TOP) + scaleStoreSpacing(10) : scaleStoreSpacing(STORE_HEADER_ACTIONS_TOP),
+              right: scaleStoreSpacing(STORE_HEADER_ACTIONS_RIGHT)
             },
             flexDirection: 'row',
             alignItems: 'center',
@@ -1196,21 +1132,19 @@ export function LobbyStoreUi() {
         >
           <UiEntity
             uiTransform={{
-              width: ACTUAL_MOBILE ? Math.round(STORE_GOLD_RENDER_WIDTH * 1.08) : STORE_GOLD_RENDER_WIDTH,
-              height: ACTUAL_MOBILE ? Math.round(STORE_GOLD_RENDER_HEIGHT * 1.08) : STORE_GOLD_RENDER_HEIGHT,
+              width: ACTUAL_MOBILE ? Math.round(scaleStoreWidth(STORE_GOLD_RENDER_WIDTH) * 1.08) : scaleStoreWidth(STORE_GOLD_RENDER_WIDTH),
+              height: ACTUAL_MOBILE ? Math.round(scaleStoreHeight(STORE_GOLD_RENDER_HEIGHT) * 1.08) : scaleStoreHeight(STORE_GOLD_RENDER_HEIGHT),
               margin: { right: scaleStoreSpacing(12) },
             }}
             uiBackground={{
-              textureMode: 'stretch',
-              texture: { src: SHOP_HUD_SHEET_SRC },
-              uvs: STORE_GOLD_UVS
+              ...createShopSpriteBackground(SHOP_UI_SPRITES.gold)
             }}
           >
             <UiEntity
               uiTransform={{
                 width: '100%',
                 height: '100%',
-                padding: { left: 54, right: 6 }
+                padding: { left: scaleStoreSpacing(54), right: scaleStoreSpacing(6) }
               }}
             >
               <OutlinedText
@@ -1235,13 +1169,11 @@ export function LobbyStoreUi() {
 
           <UiEntity
             uiTransform={{
-              width: ACTUAL_MOBILE ? Math.round(STORE_CLOSE_RENDER_WIDTH * 1.08) : STORE_CLOSE_RENDER_WIDTH,
-              height: ACTUAL_MOBILE ? Math.round(STORE_CLOSE_RENDER_HEIGHT * 1.08) : STORE_CLOSE_RENDER_HEIGHT
+              width: ACTUAL_MOBILE ? Math.round(scaleStoreWidth(STORE_CLOSE_RENDER_WIDTH) * 1.08) : scaleStoreWidth(STORE_CLOSE_RENDER_WIDTH),
+              height: ACTUAL_MOBILE ? Math.round(scaleStoreHeight(STORE_CLOSE_RENDER_HEIGHT) * 1.08) : scaleStoreHeight(STORE_CLOSE_RENDER_HEIGHT)
             }}
             uiBackground={{
-              textureMode: 'stretch',
-              texture: { src: SHOP_HUD_SHEET_SRC },
-              uvs: STORE_CLOSE_UVS
+              ...createShopSpriteBackground(SHOP_UI_SPRITES.close)
             }}
             onMouseDown={() => closeLobbyStore()}
           />
@@ -1251,14 +1183,14 @@ export function LobbyStoreUi() {
           uiTransform={{
             flexDirection: 'row',
             flexWrap: 'nowrap',
-            justifyContent: ACTUAL_MOBILE ? 'space-between' : 'flex-start',
+            justifyContent: 'flex-start',
             alignItems: 'flex-start',
-            width: ACTUAL_MOBILE ? MOBILE_MESSAGE_RENDER_WIDTH : '100%',
+            width: STORE_CONTENT_W,
             maxWidth: '100%',
-            alignSelf: ACTUAL_MOBILE ? 'center' : 'flex-start',
+            alignSelf: 'center',
             margin: {
               top: ACTUAL_MOBILE ? STORE_BODY_MARGIN_TOP + scaleStoreSpacing(20) : STORE_BODY_MARGIN_TOP,
-              left: ACTUAL_MOBILE ? 0 : 18,
+              left: 0,
               right: ACTUAL_MOBILE ? 0 : 0
             },
           }}
@@ -1286,15 +1218,13 @@ export function LobbyStoreUi() {
               width: STORE_DETAIL_BOX_RENDER_WIDTH,
               height: STORE_DETAIL_BOX_RENDER_HEIGHT,
               margin: {
-                left: ACTUAL_MOBILE ? scaleStoreSpacing(-8) : -18,
+                left: STORE_DETAIL_BOX_GAP,
                 right: 0
               },
               flexShrink: 0,
             }}
             uiBackground={{
-              textureMode: 'stretch',
-              texture: { src: SHOP_HUD_SHEET_SRC },
-              uvs: STORE_DETAIL_BOX_UVS
+              ...createShopSpriteBackground(SHOP_UI_SPRITES.detailBox)
             }}
           >
             <DetailPanel weapon={selected} embedded />
@@ -1303,24 +1233,26 @@ export function LobbyStoreUi() {
 
         <UiEntity
           uiTransform={{
-            width: MOBILE_MESSAGE_RENDER_WIDTH,
+            width: '100%',
             height: MOBILE_MESSAGE_RENDER_HEIGHT,
-            alignSelf: ACTUAL_MOBILE ? 'center' : 'flex-start',
             alignItems: 'center',
             justifyContent: 'center',
             margin: {
-              top: ACTUAL_MOBILE ? scaleStoreSpacing(6) : -2,
+              top: ACTUAL_MOBILE ? scaleStoreSpacing(6) : -scaleStoreSpacing(2),
               bottom: STORE_MESSAGE_MARGIN_BOTTOM,
-              left: ACTUAL_MOBILE ? 0 : 18
             },
-            padding: { left: scaleStoreSpacing(28), right: scaleStoreSpacing(28) },
-          }}
-          uiBackground={{
-            textureMode: 'stretch',
-            texture: { src: SHOP_HUD_SHEET_SRC },
-            uvs: STORE_MESSAGE_UVS
           }}
         >
+          <UiEntity
+            uiTransform={{
+              width: ACTUAL_MOBILE ? STORE_MESSAGE_WIDTH : Math.round(STORE_MESSAGE_WIDTH * 0.92),
+              height: ACTUAL_MOBILE ? MOBILE_MESSAGE_RENDER_HEIGHT : Math.round(MOBILE_MESSAGE_RENDER_HEIGHT * 0.92),
+              flexShrink: 0,
+            }}
+            uiBackground={{
+              ...createShopSpriteBackground(SHOP_UI_SPRITES.message)
+            }}
+          />
         </UiEntity>
       </UiEntity>
     </UiEntity>
