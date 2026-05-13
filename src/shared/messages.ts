@@ -9,6 +9,9 @@ const LobbyMessages = {
   playerLeaveLobby: Schemas.Map({
     roomId: Schemas.String
   }),
+  playerForfeitMatch: Schemas.Map({
+    roomId: Schemas.String
+  }),
   buyLoadoutWeapon: Schemas.Map({
     weaponId: Schemas.String
   }),

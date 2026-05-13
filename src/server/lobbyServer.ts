@@ -804,7 +804,7 @@ function applyPlayerDeath(state: PlayerCombatState, now: number, address: string
     state.respawnAtMs = now + PLAYER_RESPAWN_SECONDS * 1000
   } else {
     state.respawnAtMs = 0
-    setTimeout(() => eliminatePlayerFromMatch(address, roomId), 3000)
+    eliminatePlayerFromMatch(address, roomId)
   }
 }
 
@@ -821,15 +821,13 @@ function eliminatePlayerFromMatch(address: string, roomId: RoomId): void {
   const nextArenaPlayers = lobbyState.arenaPlayers.filter((p) => p.address !== normalizedAddress)
   setArenaPlayers(roomId, nextArenaPlayers)
 
-  sendLobbyReturnTeleport(roomId, [player])
-
   sendToArena(roomId, 'lobbyEvent', {
     type: 'player_eliminated',
     message: `${player.address} has been eliminated`
   })
 
   if (nextArenaPlayers.length === 0) {
-    endMatchAndReturnToLobby(roomId, 'All players eliminated. Returning to lobby.')
+    endMatchAndReturnToLobby(roomId, 'All players eliminated.')
   }
 }
 
@@ -1048,18 +1046,13 @@ function areAllLobbyPlayersEliminated(players: LobbyPlayer[]): boolean {
 
 function endMatchAndReturnToLobby(roomId: RoomId, message: string): void {
   const roomState = getRoomServerState(roomId)
-  if (roomState.pendingTeamWipeReturn) return
   const lobby = getLobbyStateMutable(roomId)
   const players = [...lobby.arenaPlayers]
-  if (!players.length) return
 
   lobby.countdownEndTimeMs = 0
   lobby.arenaIntroEndTimeMs = 0
   resetMatchRuntime(roomId)
-  roomState.pendingTeamWipeReturn = {
-    players,
-    executeAtMs: getServerTime() + TEAM_WIPE_UI_DELAY_MS + TEAM_WIPE_TELEPORT_DELAY_MS
-  }
+  roomState.pendingTeamWipeReturn = null
 
   sendToLobby(roomId, 'lobbyEvent', {
     type: 'team_wipe',
@@ -1882,6 +1875,28 @@ export function setupLobbyServer(): void {
     const roomId = getPlayerRoomId(context.from) ?? getRequestedRoomId(data.roomId)
     if (!isPlayerInLobby(context.from, roomId)) return
     await removePlayerFromLobby(roomId, context.from)
+  })
+
+  room.onMessage('playerForfeitMatch', async (data, context) => {
+    if (!context) return
+    const normalizedAddress = context.from.toLowerCase()
+    const roomId = getPlayerRoomId(normalizedAddress) ?? getRequestedRoomId(data.roomId)
+    if (!isPlayerInLobby(normalizedAddress, roomId)) return
+
+    const lobbyState = getLobbyState(roomId)
+    const runtime = getMatchRuntimeMutable(roomId)
+    if (lobbyState.phase !== LobbyPhase.MATCH_CREATED || !isPlayerInArena(normalizedAddress, roomId) || !runtime.isRunning) {
+      await removePlayerFromLobby(roomId, normalizedAddress)
+      return
+    }
+
+    const now = getServerTime()
+    const state = getOrCreatePlayerCombatState(normalizedAddress)
+    if (state.lives <= 0) return
+
+    state.lives = Math.min(state.lives, 1)
+    applyPlayerDeath(state, now, normalizedAddress, roomId)
+    sendPlayerHealthState(normalizedAddress, roomId)
   })
 
   room.onMessage('buyLoadoutWeapon', async (data, context) => {

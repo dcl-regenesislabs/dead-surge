@@ -43,6 +43,12 @@ import {
   isBrickTargetModeActive
 } from './brick'
 import { getPlayerGold } from './loadoutState'
+import {
+  DEBUG_LOBBY_MATCH_PHASE_SECONDS,
+  DEBUG_LOBBY_MATCH_WAVE,
+  DEBUG_LOBBY_MATCH_ZOMBIES_LEFT,
+  DEBUG_SHOW_GAMEPLAY_HUD_IN_LOBBY
+} from './debugFlags'
 import { OutlinedText } from './outlineComponent'
 import { LobbyStoreUi, isLobbyStoreOpen, openLobbyStore } from './lobbyStoreUi'
 import { isLocalPlayerInsideLobbyTrigger } from './lobbyWorldPanel'
@@ -52,12 +58,14 @@ import {
   getServerLoadingState,
   getPlayerArenaWeapon,
   getPlayerCombatSnapshot,
+  getLatestGameOverStatsSnapshot,
   getPlayerZcSnapshot,
   getPlayerMatchStatsSnapshot,
   shouldSuppressDeathOverlayForTeamWipe,
   shouldShowGameOverOverlay,
   getLocalAddress,
   isLocalReadyForMatch,
+  sendForfeitMatch,
   sendLeaveLobby,
   sendStartGameManual
 } from './multiplayer/lobbyClient'
@@ -117,11 +125,7 @@ const HUD_LOBBY_SHEET_HEIGHT = 1024
 const BLOOD_DAMAGE_FRAME_TEXTURE_SRC = 'assets/images/blood_frame.png'
 const DEATH_DAMAGE_FRAME_ALPHA = 1
 const DEATH_BACKDROP_ALPHA = 0.42
-const GAME_OVER_BACKDROP_ALPHA = 0.58
-const DEBUG_SHOW_GAMEPLAY_HUD_IN_LOBBY = false
-const DEBUG_LOBBY_MATCH_WAVE = 9
-const DEBUG_LOBBY_MATCH_ZOMBIES_LEFT = 23
-const DEBUG_LOBBY_MATCH_PHASE_SECONDS = 18
+const GAME_OVER_BACKDROP_ALPHA = 0.72
 const DEBUG_LOBBY_FAKE_TEAMMATES: Array<{
   address: string
   displayName: string
@@ -215,6 +219,91 @@ const START_GAME_PROGRESS_BAR_WIDTH = Math.round(STARTING_GAME_BUTTON_WIDTH * 0.
 const START_GAME_PROGRESS_BAR_HEIGHT = 10
 const START_GAME_PROGRESS_BAR_RADIUS = 5
 const LOBBY_HUD_GOLD_TOP = Math.round((1080 - (LOBBY_HUD_GOLD_HEIGHT + LOBBY_HUD_ITEM_MARGIN_BOTTOM + LOBBY_HUD_SHOP_HEIGHT)) * 0.5)
+const GAME_OVER_STATS_PANEL_WIDTH = Math.round(466 * 1.1)
+const GAME_OVER_STATS_PANEL_HEIGHT = Math.round(340 * 1.1)
+const GAME_OVER_STATS_PANEL_TOP = 339
+const GAME_OVER_STATS_PANEL_PADDING_X = 26
+const GAME_OVER_STATS_PANEL_PADDING_TOP = 18
+const GAME_OVER_STATS_ROW_HEIGHT = 46
+const GAME_OVER_STATS_ROW_GAP = 8
+const GAME_OVER_STATS_ICON_SLOT_WIDTH = 56
+const GAME_OVER_STATS_INNER_WIDTH = GAME_OVER_STATS_PANEL_WIDTH - 52
+const GAME_OVER_STATS_DIVIDER_WIDTH = 414
+const GAME_OVER_REWARD_ROW_HEIGHT = 58
+const GAME_OVER_REWARD_ROW_TOP = 256
+const GAME_OVER_DIVIDER_TOP = 238
+const GAME_OVER_COUNTER_MIN_DURATION_MS = 700
+const GAME_OVER_COUNTER_MAX_DURATION_MS = 1800
+const GAME_OVER_COUNTER_MS_PER_UNIT = 18
+const GAME_OVER_REWARD_EXTRA_DELAY_MS = 260
+const GAME_OVER_TITLE_APPEAR_DURATION_MS = 360
+const GAME_OVER_PANEL_APPEAR_DELAY_MS = 140
+const GAME_OVER_PANEL_APPEAR_DURATION_MS = 320
+const GAME_OVER_ROW_APPEAR_DURATION_MS = 260
+const GAME_OVER_ROW_APPEAR_STAGGER_MS = 90
+const GAME_OVER_DIVIDER_APPEAR_DELAY_MS = 140
+const GAME_OVER_REWARD_APPEAR_DELAY_MS = 180
+const GAME_OVER_BUTTON_APPEAR_DELAY_MS = 260
+const GAME_OVER_BUTTON_APPEAR_DURATION_MS = 280
+const GAME_OVER_ATLAS_SRC = 'assets/images/game_over_atlas.png'
+const GAME_OVER_ATLAS_WIDTH = 600
+const GAME_OVER_ATLAS_HEIGHT = 600
+const GAME_OVER_FRAME_ATLAS_SRC = 'assets/images/game_over_atlas3.png'
+const GAME_OVER_FRAME_ATLAS_WIDTH = 1024
+const GAME_OVER_FRAME_ATLAS_HEIGHT = 1024
+const GAME_OVER_TITLE_WIDTH = 735
+const GAME_OVER_TITLE_HEIGHT = 145
+const GAME_OVER_TITLE_TOP = 148
+const GAME_OVER_TITLE_UVS = createAtlasUvsFromSource(
+  140,
+  111,
+  735,
+  145,
+  GAME_OVER_FRAME_ATLAS_WIDTH,
+  GAME_OVER_FRAME_ATLAS_HEIGHT
+)
+const GAME_OVER_PANEL_UVS = createAtlasUvsFromSource(
+  176,
+  286,
+  661,
+  480,
+  GAME_OVER_FRAME_ATLAS_WIDTH,
+  GAME_OVER_FRAME_ATLAS_HEIGHT
+)
+const GAME_OVER_BUTTON_WIDTH = 420
+const GAME_OVER_BUTTON_HEIGHT = 86
+const GAME_OVER_BUTTON_TOP = 774
+const GAME_OVER_BUTTON_UVS = createAtlasUvsFromSource(
+  218,
+  797,
+  577,
+  118,
+  GAME_OVER_FRAME_ATLAS_WIDTH,
+  GAME_OVER_FRAME_ATLAS_HEIGHT
+)
+const GAME_OVER_ICON_ZOMBIE_UVS = createAtlasUvsFromSource(72, 55, 179, 170, GAME_OVER_ATLAS_WIDTH, GAME_OVER_ATLAS_HEIGHT)
+const GAME_OVER_ICON_TIMER_UVS = createAtlasUvsFromSource(339, 26, 174, 207, GAME_OVER_ATLAS_WIDTH, GAME_OVER_ATLAS_HEIGHT)
+const GAME_OVER_ICON_GOLD_UVS = createAtlasUvsFromSource(76, 275, 166, 162, GAME_OVER_ATLAS_WIDTH, GAME_OVER_ATLAS_HEIGHT)
+const GAME_OVER_ICON_ZC_UVS = createAtlasUvsFromSource(337, 274, 172, 164, GAME_OVER_ATLAS_WIDTH, GAME_OVER_ATLAS_HEIGHT)
+const GAME_OVER_ICON_WAVES_UVS = createAtlasUvsFromSource(204, 447, 191, 151, GAME_OVER_ATLAS_WIDTH, GAME_OVER_ATLAS_HEIGHT)
+
+type GameOverStatIcon = {
+  uvs: AtlasUvs
+  renderWidth: number
+  renderHeight: number
+}
+
+type GameOverStatEntry = {
+  icon: GameOverStatIcon
+  label: string
+  value: number
+  suffix?: string
+}
+
+type GameOverStatsModel = {
+  performance: GameOverStatEntry[]
+  reward: GameOverStatEntry
+}
 
 type TeamHudPlayerEntry = {
   address: string
@@ -241,6 +330,118 @@ function createAtlasUvs(x: number, y: number, width: number, height: number): At
   const top = 1 - y / HUD_LOBBY_SHEET_HEIGHT
 
   return [left, bottom, left, top, right, top, right, bottom]
+}
+
+function createAtlasUvsFromSource(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  atlasWidth: number,
+  atlasHeight: number
+): AtlasUvs {
+  const left = x / atlasWidth
+  const right = (x + width) / atlasWidth
+  const bottom = 1 - (y + height) / atlasHeight
+  const top = 1 - y / atlasHeight
+
+  return [left, bottom, left, top, right, top, right, bottom]
+}
+
+function buildGameOverStats(localAddress: string | null, waveNumber: number): GameOverStatsModel {
+  const gameOverSnapshot = getLatestGameOverStatsSnapshot()
+  const kills = gameOverSnapshot?.kills ?? (localAddress ? getPlayerMatchStatsSnapshot(localAddress).kills : 0)
+  const zcCollected = gameOverSnapshot?.zcCollected ?? (localAddress ? getPlayerZcSnapshot(localAddress) : getZombieCoins())
+  const wavesSurvived = gameOverSnapshot?.wavesSurvived ?? Math.max(0, waveNumber)
+  const timeMinutes = gameOverSnapshot?.timeMinutes ?? 0
+  const goldCoins = gameOverSnapshot?.goldCoinsEarned ?? 0
+
+  return {
+    performance: [
+      {
+        icon: { uvs: GAME_OVER_ICON_ZOMBIE_UVS, renderWidth: 39, renderHeight: 37 },
+        label: 'Zombies killed',
+        value: kills
+      },
+      {
+        icon: { uvs: GAME_OVER_ICON_WAVES_UVS, renderWidth: 40, renderHeight: 32 },
+        label: 'Waves survived',
+        value: wavesSurvived
+      },
+      {
+        icon: { uvs: GAME_OVER_ICON_TIMER_UVS, renderWidth: 34, renderHeight: 40 },
+        label: 'Time lasted',
+        value: timeMinutes,
+        suffix: "'"
+      },
+      {
+        icon: { uvs: GAME_OVER_ICON_ZC_UVS, renderWidth: 42, renderHeight: 40 },
+        label: 'ZC coins collected',
+        value: zcCollected
+      }
+    ],
+    reward: {
+      icon: { uvs: GAME_OVER_ICON_GOLD_UVS, renderWidth: 41, renderHeight: 40 },
+      label: 'Gold coins earned',
+      value: goldCoins
+    }
+  }
+}
+
+function formatAnimatedCounter(value: number, suffix: string = ''): string {
+  return `${Math.max(0, Math.round(value))}${suffix}`
+}
+
+function easeOutCubic(value: number): number {
+  return 1 - Math.pow(1 - value, 3)
+}
+
+function getTimedAnimationProgress(startedAtMs: number, nowMs: number, delayMs: number, durationMs: number): number {
+  const rawProgress = Math.max(0, Math.min(1, (nowMs - startedAtMs - delayMs) / Math.max(1, durationMs)))
+  return easeOutCubic(rawProgress)
+}
+
+function getGameOverRowAppearDelay(index: number): number {
+  return (
+    GAME_OVER_PANEL_APPEAR_DELAY_MS +
+    GAME_OVER_PANEL_APPEAR_DURATION_MS +
+    index * GAME_OVER_ROW_APPEAR_STAGGER_MS
+  )
+}
+
+function getGameOverDividerAppearDelay(stats: GameOverStatEntry[]): number {
+  return getGameOverRowAppearDelay(Math.max(0, stats.length - 1)) + GAME_OVER_DIVIDER_APPEAR_DELAY_MS
+}
+
+function getGameOverRewardAppearDelay(stats: GameOverStatEntry[]): number {
+  return getGameOverDividerAppearDelay(stats) + GAME_OVER_REWARD_APPEAR_DELAY_MS
+}
+
+function getCounterDurationMs(targetValue: number): number {
+  return Math.max(
+    GAME_OVER_COUNTER_MIN_DURATION_MS,
+    Math.min(GAME_OVER_COUNTER_MAX_DURATION_MS, Math.round(Math.max(1, targetValue) * GAME_OVER_COUNTER_MS_PER_UNIT))
+  )
+}
+
+function getAnimatedCounterValue(targetValue: number, startedAtMs: number, nowMs: number, delayMs: number = 0): number {
+  const elapsedMs = Math.max(0, nowMs - startedAtMs - delayMs)
+  const durationMs = getCounterDurationMs(targetValue)
+  const progress = Math.max(0, Math.min(1, elapsedMs / durationMs))
+  return targetValue * progress
+}
+
+function getPerformanceCounterDelay(stats: GameOverStatEntry[], index: number): number {
+  return getGameOverRowAppearDelay(index) + 40
+}
+
+function getRewardCounterDelay(stats: GameOverStatEntry[]): number {
+  return getGameOverRewardAppearDelay(stats) + GAME_OVER_REWARD_EXTRA_DELAY_MS
+}
+
+function getCounterAnimatedAlpha(startedAtMs: number, nowMs: number, delayMs: number = 0): number {
+  const intro = Math.max(0, Math.min(1, (nowMs - startedAtMs - delayMs) / 260))
+  return 0.45 + intro * 0.55
 }
 
 function scaleUiValue(value: number, scale: number): number {
@@ -410,6 +611,12 @@ function syncCachedArenaRoster(
 let isMobileRuntime = detectMobileUserAgent()
 export function isMobile(): boolean { return isMobileRuntime }
 let runtimePlatformLookupRequested = false
+let gameOverCounterAnimationStartedAtMs = 0
+let gameOverOverlayVisibleLastFrame = false
+
+function restartGameOverCounterAnimation(): void {
+  gameOverCounterAnimationStartedAtMs = Date.now()
+}
 let serverLoaderWasActive = false
 let serverLoaderCompletedUntil = 0
 
@@ -542,6 +749,331 @@ export function setupUi() {
   ReactEcsRenderer.setUiRenderer(uiMenu, { virtualWidth: 1920, virtualHeight: 1080 })
 }
 
+function GameOverOverlay(props: { stats: GameOverStatsModel }) {
+  const nowMs = Date.now()
+  const startedAtMs = gameOverCounterAnimationStartedAtMs > 0 ? gameOverCounterAnimationStartedAtMs : nowMs
+  const rewardDelayMs = getRewardCounterDelay(props.stats.performance)
+  const statsPanelShiftX = isMobileRuntime ? 0 : 36
+  const titleAppearProgress = getTimedAnimationProgress(startedAtMs, nowMs, 0, GAME_OVER_TITLE_APPEAR_DURATION_MS)
+  const panelAppearProgress = getTimedAnimationProgress(
+    startedAtMs,
+    nowMs,
+    GAME_OVER_PANEL_APPEAR_DELAY_MS,
+    GAME_OVER_PANEL_APPEAR_DURATION_MS
+  )
+  const dividerAppearDelayMs = getGameOverDividerAppearDelay(props.stats.performance)
+  const dividerAppearProgress = getTimedAnimationProgress(
+    startedAtMs,
+    nowMs,
+    dividerAppearDelayMs,
+    GAME_OVER_ROW_APPEAR_DURATION_MS
+  )
+  const rewardAppearDelayMs = getGameOverRewardAppearDelay(props.stats.performance)
+  const rewardAppearProgress = getTimedAnimationProgress(
+    startedAtMs,
+    nowMs,
+    rewardAppearDelayMs,
+    GAME_OVER_ROW_APPEAR_DURATION_MS
+  )
+  const buttonAppearProgress = getTimedAnimationProgress(
+    startedAtMs,
+    nowMs,
+    rewardAppearDelayMs + GAME_OVER_BUTTON_APPEAR_DELAY_MS,
+    GAME_OVER_BUTTON_APPEAR_DURATION_MS
+  )
+
+  return (
+    <UiEntity
+      uiTransform={{
+        width: '100%',
+        height: '100%',
+        positionType: 'absolute',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      <UiEntity
+        uiTransform={{
+          width: GAME_OVER_TITLE_WIDTH,
+          height: GAME_OVER_TITLE_HEIGHT,
+          positionType: 'absolute',
+          position: { top: GAME_OVER_TITLE_TOP + Math.round((1 - titleAppearProgress) * 34) },
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+        uiBackground={{
+          color: Color4.create(1, 1, 1, titleAppearProgress),
+          textureMode: 'stretch',
+          texture: { src: GAME_OVER_FRAME_ATLAS_SRC, filterMode: 'bi-linear', wrapMode: 'clamp' },
+          uvs: GAME_OVER_TITLE_UVS
+        }}
+      />
+      <UiEntity
+        uiTransform={{
+          width: '100%',
+          height: GAME_OVER_STATS_PANEL_HEIGHT,
+          positionType: 'absolute',
+          position: { top: GAME_OVER_STATS_PANEL_TOP + Math.round((1 - panelAppearProgress) * 24) },
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <UiEntity
+          uiTransform={{
+            width: GAME_OVER_STATS_PANEL_WIDTH,
+            height: GAME_OVER_STATS_PANEL_HEIGHT,
+            margin: { left: statsPanelShiftX },
+            padding: { top: 18, right: 26, bottom: 18, left: 26 }
+          }}
+          uiBackground={{
+            color: Color4.create(1, 1, 1, panelAppearProgress),
+            textureMode: 'stretch',
+            texture: { src: GAME_OVER_FRAME_ATLAS_SRC, filterMode: 'bi-linear', wrapMode: 'clamp' },
+            uvs: GAME_OVER_PANEL_UVS
+          }}
+        >
+        {props.stats.performance.map((stat, index) => (
+          (() => {
+            const counterDelayMs = getPerformanceCounterDelay(props.stats.performance, index)
+            const rowAppearDelayMs = getGameOverRowAppearDelay(index)
+            const rowAppearProgress = getTimedAnimationProgress(
+              startedAtMs,
+              nowMs,
+              rowAppearDelayMs,
+              GAME_OVER_ROW_APPEAR_DURATION_MS
+            )
+            return (
+          <UiEntity
+            key={`game-over-stat-${stat.label}`}
+            uiTransform={{
+              width: GAME_OVER_STATS_INNER_WIDTH,
+              height: GAME_OVER_STATS_ROW_HEIGHT,
+              positionType: 'absolute',
+              position: {
+                left: 26,
+                top: 18 + index * (GAME_OVER_STATS_ROW_HEIGHT + GAME_OVER_STATS_ROW_GAP) + Math.round((1 - rowAppearProgress) * 14)
+              },
+              flexDirection: 'row',
+              alignItems: 'center'
+            }}
+          >
+            <UiEntity
+              uiTransform={{
+                width: GAME_OVER_STATS_ICON_SLOT_WIDTH,
+                height: '100%',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <UiEntity
+                uiTransform={{
+                  width: stat.icon.renderWidth,
+                  height: stat.icon.renderHeight
+                }}
+                uiBackground={{
+                  color: Color4.create(1, 1, 1, rowAppearProgress),
+                  textureMode: 'stretch',
+                  texture: { src: GAME_OVER_ATLAS_SRC, filterMode: 'bi-linear', wrapMode: 'clamp' },
+                  uvs: stat.icon.uvs
+                }}
+              />
+            </UiEntity>
+            <UiEntity
+              uiTransform={{
+                width: 214,
+                height: '100%',
+                margin: { left: 16 },
+                justifyContent: 'center'
+              }}
+              uiText={{
+                value: stat.label,
+                fontSize: 24,
+                color: Color4.create(0.92, 0.89, 0.82, rowAppearProgress),
+                textAlign: 'middle-left'
+              }}
+            />
+            <UiEntity
+              uiTransform={{
+                width: 30,
+                height: '100%',
+                margin: { left: 4, right: 4 },
+                justifyContent: 'center'
+              }}
+              uiText={{
+                value: 'X',
+                fontSize: 22,
+                color: Color4.create(0.8, 0.72, 0.6, 0.9 * rowAppearProgress),
+                textAlign: 'middle-center'
+              }}
+            />
+            <UiEntity
+              uiTransform={{
+                width: 90,
+                height: '100%',
+                justifyContent: 'center'
+              }}
+            >
+              <OutlinedText
+                uiTransform={{
+                  width: '100%',
+                  height: '100%',
+                  alignItems: 'flex-start',
+                  justifyContent: 'center'
+                }}
+                uiText={{
+                  value: formatAnimatedCounter(getAnimatedCounterValue(stat.value, startedAtMs, nowMs, counterDelayMs), stat.suffix),
+                  fontSize: 28,
+                  color: Color4.create(
+                    1,
+                    1,
+                    1,
+                    rowAppearProgress * getCounterAnimatedAlpha(startedAtMs, nowMs, counterDelayMs)
+                  ),
+                  textAlign: 'middle-left'
+                }}
+                outlineColor={Color4.create(0.1, 0.03, 0.02, 0.95 * rowAppearProgress)}
+                outlineScale={1}
+                outlineKeyPrefix={`game-over-stat-value-${index}`}
+              />
+            </UiEntity>
+          </UiEntity>
+            )
+          })()
+        ))}
+        <UiEntity
+          uiTransform={{
+            width: GAME_OVER_STATS_DIVIDER_WIDTH,
+            height: 1,
+            positionType: 'absolute',
+            position: { left: 26, top: GAME_OVER_DIVIDER_TOP + Math.round((1 - dividerAppearProgress) * 10) }
+          }}
+          uiBackground={{
+            color: Color4.create(0.76, 0.68, 0.56, 0.3 * dividerAppearProgress)
+          }}
+        />
+        <UiEntity
+          uiTransform={{
+            width: GAME_OVER_STATS_INNER_WIDTH,
+            height: GAME_OVER_REWARD_ROW_HEIGHT,
+            positionType: 'absolute',
+            position: { left: 26, top: GAME_OVER_REWARD_ROW_TOP + Math.round((1 - rewardAppearProgress) * 14) },
+            flexDirection: 'row',
+            alignItems: 'center'
+          }}
+        >
+          <UiEntity
+            uiTransform={{
+              width: GAME_OVER_STATS_ICON_SLOT_WIDTH,
+              height: '100%',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <UiEntity
+              uiTransform={{
+                width: props.stats.reward.icon.renderWidth,
+                height: props.stats.reward.icon.renderHeight
+              }}
+              uiBackground={{
+                color: Color4.create(1, 1, 1, rewardAppearProgress),
+                textureMode: 'stretch',
+                texture: { src: GAME_OVER_ATLAS_SRC, filterMode: 'bi-linear', wrapMode: 'clamp' },
+                uvs: props.stats.reward.icon.uvs
+              }}
+            />
+          </UiEntity>
+            <UiEntity
+              uiTransform={{
+                width: 214,
+                height: '100%',
+                margin: { left: 16 },
+                justifyContent: 'center'
+              }}
+              uiText={{
+                value: props.stats.reward.label,
+                fontSize: 24,
+                color: Color4.create(0.92, 0.89, 0.82, rewardAppearProgress),
+                textAlign: 'middle-left'
+              }}
+            />
+            <UiEntity
+              uiTransform={{
+                width: 30,
+                height: '100%',
+                margin: { left: 4, right: 4 },
+                justifyContent: 'center'
+              }}
+              uiText={{
+                value: 'X',
+                fontSize: 24,
+                color: Color4.create(0.84, 0.75, 0.56, 0.95 * rewardAppearProgress),
+                textAlign: 'middle-center'
+              }}
+            />
+            <UiEntity
+              uiTransform={{
+                width: 90,
+                height: '100%',
+                justifyContent: 'center'
+              }}
+            >
+            <OutlinedText
+              uiTransform={{
+                width: '100%',
+                height: '100%',
+                alignItems: 'flex-start',
+                justifyContent: 'center'
+              }}
+                uiText={{
+                  value: formatAnimatedCounter(
+                    getAnimatedCounterValue(props.stats.reward.value, startedAtMs, nowMs, rewardDelayMs)
+                  ),
+                  fontSize: 32,
+                  color: Color4.create(
+                    0.98,
+                    0.9,
+                  0.52,
+                  rewardAppearProgress * getCounterAnimatedAlpha(startedAtMs, nowMs, rewardDelayMs)
+                ),
+                textAlign: 'middle-left'
+              }}
+              outlineColor={Color4.create(0.1, 0.03, 0.02, 0.95 * rewardAppearProgress)}
+              outlineScale={1}
+              outlineKeyPrefix='game-over-reward-value'
+            />
+          </UiEntity>
+        </UiEntity>
+        </UiEntity>
+      </UiEntity>
+      <UiEntity
+        uiTransform={{
+          width: GAME_OVER_BUTTON_WIDTH,
+          height: GAME_OVER_BUTTON_HEIGHT,
+          positionType: 'absolute',
+          position: { top: GAME_OVER_BUTTON_TOP + Math.round((1 - buttonAppearProgress) * 18) },
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+        uiBackground={{
+          color: Color4.create(1, 1, 1, buttonAppearProgress),
+          textureMode: 'stretch',
+          texture: { src: GAME_OVER_FRAME_ATLAS_SRC, filterMode: 'bi-linear', wrapMode: 'clamp' },
+          uvs: GAME_OVER_BUTTON_UVS
+        }}
+        onMouseDown={() => {
+          beginUiPointerCapture()
+          sendLeaveLobby()
+          movePlayerTo({
+            newRelativePosition: LOBBY_RETURN_POSITION
+          })
+        }}
+        onMouseUp={endUiPointerCapture}
+      />
+    </UiEntity>
+  )
+}
+
 export const uiMenu = () => {
   const state = getWaveUiState()
   const lobbyState = getLobbyState()
@@ -558,9 +1090,9 @@ export const uiMenu = () => {
   const showGameplayHudDebug = DEBUG_SHOW_GAMEPLAY_HUD_IN_LOBBY && isLobbyContext
   const syncedZombiesLeft = matchRuntime?.zombiesAlive ?? 0
   const localReadyForMatch = isLocalReadyForMatch()
-  const showGameplayHud = (inMatchContext && localReadyForMatch) || showGameplayHudDebug
-  const showLobbyHud = isLobbyContext && !showGameplayHudDebug && !lobbyStoreOpen
-  const showBackToLobbyButton = isInArenaRoster && localReadyForMatch
+  const showGameOverOverlay = shouldShowGameOverOverlay()
+  const showGameplayHud = ((inMatchContext && localReadyForMatch) || showGameplayHudDebug) && !showGameOverOverlay
+  const showBackToLobbyButton = isInArenaRoster && localReadyForMatch && !showGameOverOverlay
   const showPlayerHealthHud = showGameplayHud
   const timerNowMs = getServerTime()
   const arenaIntroSeconds =
@@ -576,7 +1108,13 @@ export const uiMenu = () => {
       ? Math.max(0, lobbyState.countdownEndTimeMs - timerNowMs)
       : 0
   const phaseRemainingSeconds = matchRuntime ? Math.max(0, Math.ceil((matchRuntime.phaseEndTimeMs - timerNowMs) / 1000)) : 0
-  const showGameOverOverlay = shouldShowGameOverOverlay()
+  const showLobbyHud = isLobbyContext && !showGameplayHudDebug && !lobbyStoreOpen && !showGameOverOverlay
+  if (showGameOverOverlay && !gameOverOverlayVisibleLastFrame) {
+    gameOverCounterAnimationStartedAtMs = Date.now()
+  } else if (!showGameOverOverlay && gameOverOverlayVisibleLastFrame) {
+    gameOverCounterAnimationStartedAtMs = 0
+  }
+  gameOverOverlayVisibleLastFrame = showGameOverOverlay
   const countdownLabel = getWaveCountdownLabel()
   const isIdle = state.phase === 'idle'
   const playerDead = isPlayerDead()
@@ -608,7 +1146,7 @@ export const uiMenu = () => {
   const playerGold = getPlayerGold()
   const damageOverlayAlpha = showGameplayHud ? getPlayerDamageOverlayAlpha(timerNowMs) : 0
   const showPersistentDeathFrame = showGameOverOverlay || (playerDead && showDeathOverlay)
-  const showDeathBackdrop = showPersistentDeathFrame && !isMobileRuntime
+  const showDeathBackdrop = playerDead && showDeathOverlay && !showGameOverOverlay && !isMobileRuntime
   const combinedDamageOverlayAlpha = showPersistentDeathFrame
     ? DEATH_DAMAGE_FRAME_ALPHA
     : damageOverlayAlpha
@@ -731,6 +1269,7 @@ const teamPanelNameWidth = isMobileRuntime ? 100 : 120
   const displayWaveNumber = showGameplayHudDebug ? DEBUG_LOBBY_MATCH_WAVE : (matchRuntime?.waveNumber ?? state.currentWave)
   const displayZombiesLeft = showGameplayHudDebug ? DEBUG_LOBBY_MATCH_ZOMBIES_LEFT : syncedZombiesLeft
   const displayPhaseRemainingSeconds = showGameplayHudDebug ? DEBUG_LOBBY_MATCH_PHASE_SECONDS : phaseRemainingSeconds
+  const gameOverStats = buildGameOverStats(localAddress, matchRuntime?.waveNumber ?? state.currentWave)
 
   return (
     <UiEntity
@@ -743,10 +1282,23 @@ const teamPanelNameWidth = isMobileRuntime ? 100 : 120
         justifyContent: 'flex-start'
       }}
     >
+      {showGameOverOverlay && (
+        <UiEntity
+          uiTransform={{
+            width: '100%',
+            height: '100%',
+            positionType: 'absolute',
+            position: { left: 0, top: 0 }
+          }}
+          uiBackground={{
+            color: Color4.create(0, 0, 0, GAME_OVER_BACKDROP_ALPHA)
+          }}
+        />
+      )}
       <UiEntity
         uiTransform={{
-          width: 1,
-          height: 1,
+          width: '100%',
+          height: '100%',
           positionType: 'absolute',
           position: { left: 0, top: 0 }
         }}
@@ -1390,6 +1942,10 @@ const teamPanelNameWidth = isMobileRuntime ? 100 : 120
             }}
             onMouseDown={() => {
               beginUiPointerCapture()
+              if (matchRuntime?.isRunning) {
+                sendForfeitMatch()
+                return
+              }
               sendLeaveLobby()
               movePlayerTo({
                 newRelativePosition: LOBBY_RETURN_POSITION
@@ -1591,57 +2147,7 @@ const teamPanelNameWidth = isMobileRuntime ? 100 : 120
           )}
         </UiEntity>
       )}
-      {showGameOverOverlay && (
-        <UiEntity
-          uiTransform={{
-            width: '100%',
-            height: '100%',
-            positionType: 'absolute',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <OutlinedText
-            uiTransform={{
-              width: 980,
-              height: 128,
-              positionType: 'absolute',
-              position: { top: 400 },
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            uiText={{
-              value: 'GAME OVER',
-              fontSize: 110,
-              color: Color4.create(1, 0.2, 0.14, 1),
-              textAlign: 'middle-center'
-            }}
-            outlineColor={Color4.create(0.08, 0, 0, 0.98)}
-            outlineScale={4}
-            outlineKeyPrefix='game-over-title'
-          />
-          <OutlinedText
-            uiTransform={{
-              width: 744,
-              height: 48,
-              positionType: 'absolute',
-              position: { top: 580 },
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            uiText={{
-              value: 'Returning to lobby...',
-              fontSize: 34,
-              color: Color4.create(0.95, 0.88, 0.76, 1),
-              textAlign: 'middle-center'
-            }}
-            outlineColor={Color4.create(0.08, 0.03, 0.02, 0.95)}
-            outlineScale={2}
-            outlineKeyPrefix='game-over-subtitle'
-          />
-        </UiEntity>
-      )}
+      {showGameOverOverlay && <GameOverOverlay stats={gameOverStats} />}
       {showCenteredOverlay && !playerDead && (
         <UiEntity
           uiTransform={{

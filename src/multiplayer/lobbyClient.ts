@@ -7,7 +7,7 @@ import { movePlayerTo } from '~system/RestrictedActions'
 import { Vector3 } from '@dcl/sdk/math'
 import { applyAuthoritativeHealthState, resetPlayerHealthAndLives } from '../playerHealth'
 import { resetDeathAnimationState, setLocalAvatarHidden } from '../deathAnimation'
-import { applyPlayerLoadoutSnapshot } from '../loadoutState'
+import { applyPlayerLoadoutSnapshot, getPlayerGold } from '../loadoutState'
 import { enableArenaWeapon, resetArenaWeaponProgress } from '../weaponManager'
 import { resetToIdle } from '../waveManager'
 import { ArenaWeaponType } from '../shared/loadoutCatalog'
@@ -24,6 +24,7 @@ let hasProfileLoadSent = false
 let hasLocalLoadoutState = false
 let localReadyForMatch = false
 let lastTeamWipeAffectedLocalPlayer = false
+let localGameOverActive = false
 let sceneRoomConnectedAtMs = 0
 let localAuthDebugActive = false
 let debugLobbyState: LobbyStateSnapshot | null = null
@@ -34,6 +35,18 @@ const playerArenaWeaponByAddress = new Map<string, { weaponType: ArenaWeaponType
 const playerPowerupStateByAddress = new Map<string, { rageShieldEndAtMs: number; speedEndAtMs: number }>()
 const playerMatchKillsByAddress = new Map<string, number>()
 const playerMatchZcByAddress = new Map<string, number>()
+let localMatchKills = 0
+let localMatchZcCollected = 0
+type GameOverStatsSnapshot = {
+  kills: number
+  wavesSurvived: number
+  timeMinutes: number
+  zcCollected: number
+  goldCoinsEarned: number
+}
+let latestGameOverStatsSnapshot: GameOverStatsSnapshot | null = null
+let currentMatchStartedAtMs = 0
+let currentMatchStartingGold = 0
 const ENABLE_LOCAL_AUTH_DEBUG_IN_PREVIEW = false
 const LOCAL_AUTH_DEBUG_GRACE_MS = 2500
 const LOCAL_AUTH_DEBUG_ARENA_INTRO_SECONDS = 5
@@ -50,6 +63,12 @@ function getDebugArenaLookAt(): { x: number; y: number; z: number } {
 function resetLocalMatchUiState(): void {
   localReadyForMatch = false
   lastTeamWipeAffectedLocalPlayer = false
+  localGameOverActive = false
+  latestGameOverStatsSnapshot = null
+  currentMatchStartedAtMs = 0
+  currentMatchStartingGold = 0
+  localMatchKills = 0
+  localMatchZcCollected = 0
   playerCombatStateByAddress.clear()
   playerMatchKillsByAddress.clear()
   playerMatchZcByAddress.clear()
@@ -67,6 +86,28 @@ function resetLocalMatchUiState(): void {
 
 function getRequestedRoomId(roomId?: RoomId): RoomId {
   return roomId ?? getRuntimeRoomId()
+}
+
+function captureLatestGameOverStatsSnapshot(localAddress: string): void {
+  const normalizedAddress = localAddress.toLowerCase()
+  const runtime = getMatchRuntimeState()
+  const activeWaveNumber = runtime?.waveNumber ?? 0
+  const wavesSurvived =
+    runtime?.cyclePhase === WaveCyclePhase.ACTIVE
+      ? Math.max(0, activeWaveNumber - 1)
+      : activeWaveNumber
+  const elapsedMinutes =
+    currentMatchStartedAtMs > 0
+      ? Math.max(1, Math.round((Date.now() - currentMatchStartedAtMs) / 60000))
+      : 0
+
+  latestGameOverStatsSnapshot = {
+    kills: localMatchKills,
+    wavesSurvived,
+    timeMinutes: elapsedMinutes,
+    zcCollected: localMatchZcCollected,
+    goldCoinsEarned: Math.max(0, getPlayerGold() - currentMatchStartingGold)
+  }
 }
 
 function getLobbySnapshotsByRoomId(): Map<RoomId, LobbyStateSnapshot> {
@@ -150,6 +191,13 @@ export function setupLobbyClient(): void {
       lastTeamWipeAffectedLocalPlayer = false
     }
     if (data.type === 'team_wipe' || data.type === 'lobby' || data.type === 'match_created') {
+      if (data.type !== 'team_wipe' && !localGameOverActive) {
+        latestGameOverStatsSnapshot = null
+      }
+      if (data.type !== 'team_wipe') {
+        currentMatchStartedAtMs = 0
+        currentMatchStartingGold = 0
+      }
       playerArenaWeaponByAddress.clear()
       playerPowerupStateByAddress.clear()
       playerMatchKillsByAddress.clear()
@@ -159,6 +207,11 @@ export function setupLobbyClient(): void {
     }
     if (data.type === 'waves_started') {
       if (!localIsInArena || !localReadyForMatch) return
+      currentMatchStartedAtMs = Date.now()
+      currentMatchStartingGold = getPlayerGold()
+      latestGameOverStatsSnapshot = null
+      localMatchKills = 0
+      localMatchZcCollected = 0
       enableArenaWeapon()
     }
     console.log(`[Lobby] ${data.type}: ${data.message}`)
@@ -166,6 +219,10 @@ export function setupLobbyClient(): void {
   room.onMessage('zombieDied', (data) => {
     const killerAddress = data.killerAddress.toLowerCase()
     playerMatchKillsByAddress.set(killerAddress, (playerMatchKillsByAddress.get(killerAddress) ?? 0) + 1)
+    const localAddress = getLocalAddress()
+    if (localAddress && killerAddress === localAddress.toLowerCase()) {
+      localMatchKills += 1
+    }
   })
   room.onMessage('playerHealthState', (data) => {
     const address = data.address.toLowerCase()
@@ -180,6 +237,10 @@ export function setupLobbyClient(): void {
     if (!localAddress || address !== localAddress) return
     setLocalAvatarHidden(data.isDead)
     applyAuthoritativeHealthState(data.hp, data.isDead, data.respawnAtMs, data.lives)
+    if (data.isDead && data.lives <= 0) {
+      captureLatestGameOverStatsSnapshot(localAddress)
+      localGameOverActive = true
+    }
   })
   room.onMessage('playerLoadoutState', (data) => {
     const localAddress = getLocalAddress()
@@ -199,7 +260,12 @@ export function setupLobbyClient(): void {
     })
   })
   room.onMessage('playerZcState', (data) => {
-    playerMatchZcByAddress.set(data.address.toLowerCase(), data.zc)
+    const normalizedAddress = data.address.toLowerCase()
+    playerMatchZcByAddress.set(normalizedAddress, data.zc)
+    const localAddress = getLocalAddress()
+    if (localAddress && normalizedAddress === localAddress.toLowerCase()) {
+      localMatchZcCollected = data.zc
+    }
   })
   room.onMessage('matchAutoTeleport', (data) => {
     const localAddress = getLocalAddress()
@@ -273,6 +339,16 @@ export function sendLeaveLobby(roomId?: RoomId): void {
   const targetRoomId = getRequestedRoomId(roomId)
   setCurrentRoomId(targetRoomId)
   void room.send('playerLeaveLobby', { roomId: targetRoomId })
+}
+
+export function sendForfeitMatch(roomId?: RoomId): void {
+  if (ensureLocalAuthDebugActive('leaveLobby')) {
+    debugLeaveLobby()
+    return
+  }
+  const targetRoomId = getRequestedRoomId(roomId)
+  setCurrentRoomId(targetRoomId)
+  void room.send('playerForfeitMatch', { roomId: targetRoomId })
 }
 
 export function sendBuyLoadoutWeapon(weaponId: string): void {
@@ -741,7 +817,12 @@ export function getLatestLobbyEvent(): string {
   return latestLobbyEvent
 }
 
+export function getLatestGameOverStatsSnapshot(): GameOverStatsSnapshot | null {
+  return latestGameOverStatsSnapshot ? { ...latestGameOverStatsSnapshot } : null
+}
+
 export function shouldShowGameOverOverlay(windowMs: number = 3000): boolean {
+  if (localGameOverActive) return true
   if (latestLobbyEventType !== 'team_wipe') return false
   if (!lastTeamWipeAffectedLocalPlayer) return false
   const elapsedMs = Date.now() - latestLobbyEventAtMs
@@ -750,7 +831,7 @@ export function shouldShowGameOverOverlay(windowMs: number = 3000): boolean {
 }
 
 export function shouldSuppressDeathOverlayForTeamWipe(): boolean {
-  return latestLobbyEventType === 'team_wipe' && lastTeamWipeAffectedLocalPlayer
+  return localGameOverActive || (latestLobbyEventType === 'team_wipe' && lastTeamWipeAffectedLocalPlayer)
 }
 
 export function isLocalReadyForMatch(): boolean {

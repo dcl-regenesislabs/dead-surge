@@ -68,7 +68,7 @@ import { initArenaRemotePowerups } from './arenaRemotePowerups'
 import { initTimeSync } from './shared/timeSync'
 import { room } from './shared/messages'
 import { refreshArenaRoomConfigsFromScene } from './shared/roomConfig'
-import { DEBUG_SHOP_UI_ONLY, DEBUG_SHOP_UI_ONLY_LOADOUT } from './debugFlags'
+import { DEBUG_SHOP_UI_ONLY, DEBUG_SHOP_UI_ONLY_LOADOUT, DEBUG_UI_ONLY_MODE } from './debugFlags'
 import { applyPlayerLoadoutSnapshot } from './loadoutState'
 import { openLobbyStore } from './lobbyStoreUi'
 
@@ -297,11 +297,15 @@ function setupShotReplicationClient(): void {
 export function main() {
   refreshArenaRoomConfigsFromScene()
 
-  if (DEBUG_SHOP_UI_ONLY) {
+  if (DEBUG_UI_ONLY_MODE !== 'off') {
     if (isServer()) return
-    applyPlayerLoadoutSnapshot(DEBUG_SHOP_UI_ONLY_LOADOUT)
+    if (DEBUG_SHOP_UI_ONLY) {
+      applyPlayerLoadoutSnapshot(DEBUG_SHOP_UI_ONLY_LOADOUT)
+    }
     setupUi()
-    openLobbyStore()
+    if (DEBUG_SHOP_UI_ONLY) {
+      openLobbyStore()
+    }
     return
   }
 
