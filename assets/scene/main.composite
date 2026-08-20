@@ -61,20 +61,20 @@
         "512": {
           "json": {
             "position": {
-              "x": 8.249999046325684,
-              "y": 1.796986004443113e-9,
-              "z": -14.035943984985352
-            },
-            "scale": {
-              "x": 0.75,
-              "y": 1,
-              "z": 0.75
+              "x": 8.25,
+              "y": -0.019999999552965164,
+              "z": -14
             },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
+            },
+            "scale": {
+              "x": 0.75,
+              "y": 1,
+              "z": 0.75
             },
             "parent": 0
           }
@@ -796,20 +796,20 @@
         "550": {
           "json": {
             "position": {
-              "x": 31.66666603088379,
-              "y": 0.019999999552965164,
-              "z": 32.20000076293945
+              "x": 31.75,
+              "y": 0.029999999329447746,
+              "z": 32.25
+            },
+            "rotation": {
+              "x": 0.7071067690849304,
+              "y": 0,
+              "z": 0,
+              "w": 0.7071067690849304
             },
             "scale": {
               "x": 64,
-              "y": 63.9987678527832,
-              "z": 0.9999807476997375
-            },
-            "rotation": {
-              "x": 0.7070996761322021,
-              "y": 0,
-              "z": 0,
-              "w": 0.7071138620376587
+              "y": 64,
+              "z": 1
             },
             "parent": 512
           }
@@ -1006,20 +1006,20 @@
         "560": {
           "json": {
             "position": {
-              "x": 112.6500244140625,
-              "y": 1.796986004443113e-9,
-              "z": -14.035943984985352
-            },
-            "scale": {
-              "x": 0.75,
-              "y": 1,
-              "z": 0.75
+              "x": 112.6500015258789,
+              "y": -0.009999999776482582,
+              "z": -14.039999961853027
             },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
+            },
+            "scale": {
+              "x": 0.75,
+              "y": 1,
+              "z": 0.75
             },
             "parent": 0
           }
@@ -1027,20 +1027,20 @@
         "561": {
           "json": {
             "position": {
-              "x": 8.249999046325684,
-              "y": 1.796986004443113e-9,
-              "z": 39.71405792236328
-            },
-            "scale": {
-              "x": 0.75,
-              "y": 1,
-              "z": 0.75
+              "x": 8.25,
+              "y": -0.009999999776482582,
+              "z": 39.709999084472656
             },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
+            },
+            "scale": {
+              "x": 0.75,
+              "y": 1,
+              "z": 0.75
             },
             "parent": 0
           }
@@ -1237,20 +1237,20 @@
         "571": {
           "json": {
             "position": {
-              "x": 112.6500244140625,
-              "y": 1.796986004443113e-9,
-              "z": 39.46405792236328
-            },
-            "scale": {
-              "x": 0.75,
-              "y": 1,
-              "z": 0.75
+              "x": 112.6500015258789,
+              "y": -0.009999999776482582,
+              "z": 39.459999084472656
             },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
+            },
+            "scale": {
+              "x": 0.75,
+              "y": 1,
+              "z": 0.75
             },
             "parent": 0
           }
@@ -1469,19 +1469,40 @@
           "json": {
             "position": {
               "x": 60.400001525878906,
-              "y": 0,
+              "y": -0.009999999776482582,
               "z": 63.709999084472656
-            },
-            "scale": {
-              "x": 0.75,
-              "y": 1,
-              "z": 0.3700000047683716
             },
             "rotation": {
               "x": 0,
               "y": 0,
               "z": 0,
               "w": 1
+            },
+            "scale": {
+              "x": 0.75,
+              "y": 1,
+              "z": 0.3700000047683716
+            },
+            "parent": 0
+          }
+        },
+        "583": {
+          "json": {
+            "position": {
+              "x": 84,
+              "y": 0,
+              "z": 24
+            },
+            "rotation": {
+              "x": 0.7071067690849304,
+              "y": 0,
+              "z": 0,
+              "w": 0.7071067690849304
+            },
+            "scale": {
+              "x": 56.400001525878906,
+              "y": 78.5,
+              "z": 1.2000000476837158
             },
             "parent": 0
           }
@@ -2156,13 +2177,13 @@
         "549": {
           "json": {
             "material": {
-              "$case": "unlit",
-              "unlit": {
+              "$case": "pbr",
+              "pbr": {
                 "texture": {
                   "tex": {
                     "$case": "texture",
                     "texture": {
-                      "src": "",
+                      "src": "assets/custom/tiled-textures/arenafloor_basecolor.png",
                       "wrapMode": 0,
                       "filterMode": 0,
                       "offset": {
@@ -2170,20 +2191,14 @@
                         "y": 0
                       },
                       "tiling": {
-                        "x": 1,
-                        "y": 1
+                        "x": 10,
+                        "y": 10
                       }
                     }
                   }
                 },
                 "alphaTest": 0,
                 "castShadows": false,
-                "diffuseColor": {
-                  "r": 0.12156862765550613,
-                  "g": 0.12156862765550613,
-                  "b": 0.12156862765550613,
-                  "a": 1
-                },
                 "alphaTexture": {
                   "tex": {
                     "$case": "texture",
@@ -2201,7 +2216,49 @@
                       }
                     }
                   }
-                }
+                },
+                "emissiveTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1,
+                        "y": 1
+                      }
+                    }
+                  }
+                },
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "assets/custom/tiled-textures/arenafloor_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 10,
+                        "y": 10
+                      }
+                    }
+                  }
+                },
+                "transparencyMode": 4,
+                "metallic": 0.5,
+                "roughness": 1,
+                "specularIntensity": 1,
+                "emissiveIntensity": 0,
+                "directIntensity": 1
               }
             }
           }
@@ -2209,13 +2266,13 @@
         "550": {
           "json": {
             "material": {
-              "$case": "unlit",
-              "unlit": {
+              "$case": "pbr",
+              "pbr": {
                 "texture": {
                   "tex": {
                     "$case": "texture",
                     "texture": {
-                      "src": "",
+                      "src": "assets/custom/tiled-textures/lobbyfloor_basecolor.png",
                       "wrapMode": 0,
                       "filterMode": 0,
                       "offset": {
@@ -2223,20 +2280,14 @@
                         "y": 0
                       },
                       "tiling": {
-                        "x": 1,
-                        "y": 1
+                        "x": 10,
+                        "y": 10
                       }
                     }
                   }
                 },
                 "alphaTest": 0,
                 "castShadows": false,
-                "diffuseColor": {
-                  "r": 0.12156862765550613,
-                  "g": 0.12156862765550613,
-                  "b": 0.12156862765550613,
-                  "a": 1
-                },
                 "alphaTexture": {
                   "tex": {
                     "$case": "texture",
@@ -2254,7 +2305,49 @@
                       }
                     }
                   }
-                }
+                },
+                "emissiveTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1,
+                        "y": 1
+                      }
+                    }
+                  }
+                },
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "assets/custom/tiled-textures/lobbyfloor_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 10,
+                        "y": 10
+                      }
+                    }
+                  }
+                },
+                "transparencyMode": 4,
+                "metallic": 0.5,
+                "roughness": 1,
+                "specularIntensity": 1,
+                "emissiveIntensity": 0,
+                "directIntensity": 1
               }
             }
           }
@@ -2262,13 +2355,13 @@
         "559": {
           "json": {
             "material": {
-              "$case": "unlit",
-              "unlit": {
+              "$case": "pbr",
+              "pbr": {
                 "texture": {
                   "tex": {
                     "$case": "texture",
                     "texture": {
-                      "src": "",
+                      "src": "assets/custom/tiled-textures/arenafloor_basecolor.png",
                       "wrapMode": 0,
                       "filterMode": 0,
                       "offset": {
@@ -2276,20 +2369,14 @@
                         "y": 0
                       },
                       "tiling": {
-                        "x": 1,
-                        "y": 1
+                        "x": 10,
+                        "y": 10
                       }
                     }
                   }
                 },
                 "alphaTest": 0,
                 "castShadows": false,
-                "diffuseColor": {
-                  "r": 0.12156862765550613,
-                  "g": 0.12156862765550613,
-                  "b": 0.12156862765550613,
-                  "a": 1
-                },
                 "alphaTexture": {
                   "tex": {
                     "$case": "texture",
@@ -2307,7 +2394,49 @@
                       }
                     }
                   }
-                }
+                },
+                "emissiveTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1,
+                        "y": 1
+                      }
+                    }
+                  }
+                },
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "assets/custom/tiled-textures/arenafloor_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 10,
+                        "y": 10
+                      }
+                    }
+                  }
+                },
+                "transparencyMode": 4,
+                "metallic": 0.5,
+                "roughness": 1,
+                "specularIntensity": 1,
+                "emissiveIntensity": 0,
+                "directIntensity": 1
               }
             }
           }
@@ -2315,13 +2444,13 @@
         "570": {
           "json": {
             "material": {
-              "$case": "unlit",
-              "unlit": {
+              "$case": "pbr",
+              "pbr": {
                 "texture": {
                   "tex": {
                     "$case": "texture",
                     "texture": {
-                      "src": "",
+                      "src": "assets/custom/tiled-textures/arenafloor_basecolor.png",
                       "wrapMode": 0,
                       "filterMode": 0,
                       "offset": {
@@ -2329,20 +2458,14 @@
                         "y": 0
                       },
                       "tiling": {
-                        "x": 1,
-                        "y": 1
+                        "x": 10,
+                        "y": 10
                       }
                     }
                   }
                 },
                 "alphaTest": 0,
                 "castShadows": false,
-                "diffuseColor": {
-                  "r": 0.12156862765550613,
-                  "g": 0.12156862765550613,
-                  "b": 0.12156862765550613,
-                  "a": 1
-                },
                 "alphaTexture": {
                   "tex": {
                     "$case": "texture",
@@ -2360,7 +2483,49 @@
                       }
                     }
                   }
-                }
+                },
+                "emissiveTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1,
+                        "y": 1
+                      }
+                    }
+                  }
+                },
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "assets/custom/tiled-textures/arenafloor_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 10,
+                        "y": 10
+                      }
+                    }
+                  }
+                },
+                "transparencyMode": 4,
+                "metallic": 0.5,
+                "roughness": 1,
+                "specularIntensity": 1,
+                "emissiveIntensity": 0,
+                "directIntensity": 1
               }
             }
           }
@@ -2468,13 +2633,13 @@
         "581": {
           "json": {
             "material": {
-              "$case": "unlit",
-              "unlit": {
+              "$case": "pbr",
+              "pbr": {
                 "texture": {
                   "tex": {
                     "$case": "texture",
                     "texture": {
-                      "src": "",
+                      "src": "assets/custom/tiled-textures/arenafloor_basecolor.png",
                       "wrapMode": 0,
                       "filterMode": 0,
                       "offset": {
@@ -2482,20 +2647,14 @@
                         "y": 0
                       },
                       "tiling": {
-                        "x": 1,
-                        "y": 1
+                        "x": 10,
+                        "y": 5
                       }
                     }
                   }
                 },
                 "alphaTest": 0,
                 "castShadows": false,
-                "diffuseColor": {
-                  "r": 0.12156862765550613,
-                  "g": 0.12156862765550613,
-                  "b": 0.12156862765550613,
-                  "a": 1
-                },
                 "alphaTexture": {
                   "tex": {
                     "$case": "texture",
@@ -2513,7 +2672,138 @@
                       }
                     }
                   }
-                }
+                },
+                "emissiveTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1,
+                        "y": 1
+                      }
+                    }
+                  }
+                },
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "assets/custom/tiled-textures/arenafloor_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 10,
+                        "y": 10
+                      }
+                    }
+                  }
+                },
+                "transparencyMode": 4,
+                "metallic": 0.5,
+                "roughness": 1,
+                "specularIntensity": 1,
+                "emissiveIntensity": 0,
+                "directIntensity": 1
+              }
+            }
+          }
+        },
+        "583": {
+          "json": {
+            "material": {
+              "$case": "pbr",
+              "pbr": {
+                "texture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "assets/custom/tiled-textures/lobbyfloor_basecolor.png",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 10,
+                        "y": 15
+                      }
+                    }
+                  }
+                },
+                "alphaTest": 0,
+                "castShadows": false,
+                "alphaTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1,
+                        "y": 1
+                      }
+                    }
+                  }
+                },
+                "emissiveTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 1,
+                        "y": 1
+                      }
+                    }
+                  }
+                },
+                "bumpTexture": {
+                  "tex": {
+                    "$case": "texture",
+                    "texture": {
+                      "src": "assets/custom/tiled-textures/lobbyfloor_normal.png",
+                      "wrapMode": 0,
+                      "filterMode": 0,
+                      "offset": {
+                        "x": 0,
+                        "y": 0
+                      },
+                      "tiling": {
+                        "x": 10,
+                        "y": 15
+                      }
+                    }
+                  }
+                },
+                "transparencyMode": 4,
+                "metallic": 0.5,
+                "roughness": 1,
+                "specularIntensity": 1,
+                "emissiveIntensity": 0,
+                "directIntensity": 1
               }
             }
           }
@@ -2606,6 +2896,15 @@
               "plane": {}
             }
           }
+        },
+        "583": {
+          "json": {
+            "collisionMask": 2,
+            "mesh": {
+              "$case": "plane",
+              "plane": {}
+            }
+          }
         }
       }
     },
@@ -2669,6 +2968,16 @@
           }
         },
         "581": {
+          "json": {
+            "mesh": {
+              "$case": "plane",
+              "plane": {
+                "uvs": []
+              }
+            }
+          }
+        },
+        "583": {
           "json": {
             "mesh": {
               "$case": "plane",
@@ -3032,6 +3341,11 @@
           "json": {
             "value": "arena_tutorial"
           }
+        },
+        "583": {
+          "json": {
+            "value": "Plane_6"
+          }
         }
       }
     },
@@ -3077,9 +3391,9 @@
         "serializationType": "map"
       },
       "data": {
-        "0": {
+        "583": {
           "json": {
-            "gizmo": 0
+            "gizmo": 1
           }
         }
       }
@@ -3130,6 +3444,7 @@
                 "entity": 0,
                 "open": true,
                 "children": [
+                  583,
                   517,
                   512,
                   560,
@@ -3155,6 +3470,7 @@
               },
               {
                 "entity": 512,
+                "open": true,
                 "children": [
                   513,
                   515,
@@ -3290,6 +3606,7 @@
               },
               {
                 "entity": 560,
+                "open": true,
                 "children": [
                   559,
                   558,
@@ -3340,6 +3657,7 @@
               },
               {
                 "entity": 561,
+                "open": true,
                 "children": [
                   549,
                   548,
@@ -3390,6 +3708,7 @@
               },
               {
                 "entity": 571,
+                "open": true,
                 "children": [
                   570,
                   569,
@@ -3444,6 +3763,7 @@
               },
               {
                 "entity": 582,
+                "open": true,
                 "children": [
                   581,
                   580,
@@ -3490,6 +3810,10 @@
               },
               {
                 "entity": 573,
+                "children": []
+              },
+              {
+                "entity": 583,
                 "children": []
               }
             ]
@@ -3726,11 +4050,14 @@
         },
         "582": {
           "json": {}
+        },
+        "583": {
+          "json": {}
         }
       }
     },
     {
-      "name": "inspector::SceneMetadata-v4",
+      "name": "inspector::SceneMetadata-v5",
       "jsonSchema": {
         "type": "object",
         "properties": {
@@ -4050,6 +4377,14 @@
             }
           },
           "disableNearbyVoiceChat": {
+            "type": "boolean",
+            "serializationType": "optional",
+            "optionalJsonSchema": {
+              "type": "boolean",
+              "serializationType": "boolean"
+            }
+          },
+          "hideLandscapeTerrain": {
             "type": "boolean",
             "serializationType": "optional",
             "optionalJsonSchema": {
@@ -4421,7 +4756,8 @@
             ],
             "skyboxConfig": {},
             "creator": "",
-            "disableNearbyVoiceChat": false
+            "disableNearbyVoiceChat": false,
+            "hideLandscapeTerrain": false
           }
         }
       }
