@@ -2,9 +2,7 @@ import { Vector3 } from '@dcl/sdk/math'
 import { ROOM_IDS, RoomId, getArenaRoomConfig } from './roomConfig'
 
 export const LAVA_MODEL_SRCS = [
-  'assets/asset-packs/lava/lava.glb',
-  'assets/asset-packs/lava_2/lava_02.glb',
-  'assets/asset-packs/lava_3/lava_03.glb'
+  'assets/custom/models/lava .glb'
 ] as const
 
 export const LAVA_FIRST_WAVE = 1
@@ -53,7 +51,7 @@ export const LAVA_WORLD_SIZE_Z = SHARED_LAVA_GRID_DIMENSIONS.worldSizeZ
 export const LAVA_GRID_SIZE_X = Math.floor(LAVA_WORLD_SIZE_X / LAVA_ZONE_WORLD_SIZE)
 export const LAVA_GRID_SIZE_Z = Math.floor(LAVA_WORLD_SIZE_Z / LAVA_ZONE_WORLD_SIZE)
 export const LAVA_GRID_SIZE = Math.min(LAVA_GRID_SIZE_X, LAVA_GRID_SIZE_Z)
-export const LAVA_TILE_SCALE_XZ = LAVA_ZONE_WORLD_SIZE
+export const LAVA_TILE_SCALE_XZ = LAVA_ZONE_WORLD_SIZE * 0.5
 export const LAVA_TILE_WARNING_SCALE_Y = 0.04
 export const LAVA_TILE_ACTIVE_SCALE_Y = 0.1
 export const LAVA_TILE_HIDDEN_SCALE_Y = 0.001

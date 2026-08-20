@@ -1,4 +1,4 @@
-import { engine, Entity, GltfContainer, Transform } from '@dcl/sdk/ecs'
+import { Animator, engine, Entity, GltfContainer, Transform, VisibilityComponent } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import { room } from './shared/messages'
 import { getLobbyState, getLocalAddress, isLocalReadyForMatch } from './multiplayer/lobbyClient'
@@ -38,6 +38,16 @@ type LocalLavaZone = {
 const HIDDEN_POSITION_Y = -3
 const LAVA_JUMP_CLEARANCE_Y = 0.9
 const BRICK_SAFE_HEIGHT_Y = 0.35
+
+const FIRE_ON_PLAYER_GLB = 'assets/custom/models/fire_on_player.glb'
+const FIRE_ON_PLAYER_ANIMS = [
+  'Fire emptyAction.001', 'ArmatureAction.005', 'ArmatureAction.006',
+  'ArmatureAction.007', 'ArmatureAction.008',
+  'Spark 1Action', 'Spark 2Action', 'Sparks backAction',
+  'Spark 1Action.001', 'Spark 2Action.001'
+]
+
+let fireOnPlayerEntity: Entity | null = null
 
 const localLavaZoneByRoomTileKey = new Map<string, LocalLavaZone>()
 const localLavaTileKeyById = new Map<string, string>()
@@ -238,6 +248,15 @@ export function initLavaHazardClient(): void {
   isLavaSyncInitialized = true
   initializeLavaZones()
 
+  const fireEntity = engine.addEntity()
+  GltfContainer.create(fireEntity, { src: FIRE_ON_PLAYER_GLB, visibleMeshesCollisionMask: 0, invisibleMeshesCollisionMask: 0 })
+  Animator.create(fireEntity, {
+    states: FIRE_ON_PLAYER_ANIMS.map((clip) => ({ clip, playing: true, loop: true, speed: 1 }))
+  })
+  Transform.create(fireEntity, { position: Vector3.Zero() })
+  VisibilityComponent.create(fireEntity, { visible: false })
+  fireOnPlayerEntity = fireEntity
+
   room.onMessage('lavaHazardsSpawned', (data) => {
     if (data.roomId !== getCurrentRoomId()) return
     if (!isLocalPlayerInCurrentMatch(data.roomId)) return
@@ -287,24 +306,35 @@ export function lavaHazardSystem(): void {
     updateZoneVisual(zone, now)
   }
 
-  if (!Transform.has(engine.PlayerEntity)) return
-  if (now - lastLavaDamageRequestAtMs < LAVA_DAMAGE_INTERVAL_MS) return
+  if (!Transform.has(engine.PlayerEntity)) {
+    if (fireOnPlayerEntity) VisibilityComponent.getMutable(fireOnPlayerEntity).visible = false
+    return
+  }
 
   const playerPosition = Transform.get(engine.PlayerEntity).position
   if (lavaPlayerGroundY === null || playerPosition.y < lavaPlayerGroundY || playerPosition.y - lavaPlayerGroundY < 0.2) {
     lavaPlayerGroundY = playerPosition.y
   }
-  if (lavaPlayerGroundY !== null && playerPosition.y - lavaPlayerGroundY > LAVA_JUMP_CLEARANCE_Y) return
-  if (isPlayerStandingOnBrick(playerPosition)) return
 
+  const isJumping = lavaPlayerGroundY !== null && playerPosition.y - lavaPlayerGroundY > LAVA_JUMP_CLEARANCE_Y
+  const isOnBrick = isPlayerStandingOnBrick(playerPosition)
   const tileCoords = getLavaGridCoordsFromWorld(roomId, playerPosition.x, playerPosition.z)
-  if (!tileCoords) return
+  const zone = tileCoords
+    ? localLavaZoneByRoomTileKey.get(getZoneKey(roomId, tileCoords.gridX, tileCoords.gridZ))
+    : undefined
+  const isOnActiveLava = !!zone?.lavaId && now >= zone.activeAtMs && now < zone.expiresAtMs && !isJumping && !isOnBrick
 
-  const zone = localLavaZoneByRoomTileKey.get(getZoneKey(roomId, tileCoords.gridX, tileCoords.gridZ))
-  if (!zone?.lavaId) return
-  if (now < zone.activeAtMs || now >= zone.expiresAtMs) return
+  if (fireOnPlayerEntity) {
+    VisibilityComponent.getMutable(fireOnPlayerEntity).visible = isOnActiveLava
+    if (isOnActiveLava) {
+      Transform.getMutable(fireOnPlayerEntity).position = Vector3.create(playerPosition.x, playerPosition.y, playerPosition.z)
+    }
+  }
+
+  if (now - lastLavaDamageRequestAtMs < LAVA_DAMAGE_INTERVAL_MS) return
+  if (!isOnActiveLava) return
 
   lastLavaDamageRequestAtMs = now
   triggerPredictedDamageFeedback(1)
-  void room.send('lavaHazardDamageRequest', { lavaId: zone.lavaId })
+  void room.send('lavaHazardDamageRequest', { lavaId: zone!.lavaId! })
 }
