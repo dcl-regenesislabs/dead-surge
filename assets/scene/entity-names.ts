@@ -19,6 +19,7 @@ export enum EntityNames {
   Plane_3 = "Plane_3",
   Plane_4 = "Plane_4",
   Plane_5 = "Plane_5",
+  Plane_6 = "Plane_6",
   WallArena01_glb = "WallArena01.glb",
   WallArena01_glb_2 = "WallArena01.glb_2",
   WallArena01_glb_3 = "WallArena01.glb_3",
