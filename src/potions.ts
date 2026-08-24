@@ -10,17 +10,26 @@ import { getGameTime } from './zombie'
 import { getServerTime } from './shared/timeSync'
 import { getLobbyState, getLocalAddress, isLocalReadyForMatch, sendPlayerHealRequest } from './multiplayer/lobbyClient'
 
-const HEALTH_POTION_GLB = 'assets/scene/Models/pickups/PickUpHealth.glb'
-const RAGE_POTION_GLB = 'assets/scene/Models/pickups/PickUpRage.glb'
-const SPEED_POTION_GLB = 'assets/scene/Models/pickups/PickUpSpeed.glb'
+const HEALTH_PICKUP_EFFECT_GLB = 'assets/custom/models/powerup_health.glb'
+const HEALTH_PICKUP_EFFECT_ANIMS = [
+  'Health_OrbitBurst',
+  'Health1_Burst', 'Health2_Burst', 'Health3_Burst', 'Health4_Burst',
+  'Health5_Burst', 'Health6_Burst', 'HealthFloor_Pulse'
+]
+const HEALTH_PICKUP_EFFECT_DURATION = 2.0
 
-const HEALTH_POTION_SCALE = 1
-const RAGE_POTION_SCALE = 1
-const SPEED_POTION_SCALE = 1
+const HEALTH_POTION_GLB = 'assets/custom/models/powerup_health_floor.glb'
+const RAGE_POTION_GLB = 'assets/custom/models/powerup_rage_floor.glb'
+const SPEED_POTION_GLB = 'assets/custom/models/powerup_speed_floor.glb'
+
+const HEALTH_POTION_SCALE = 1.5
+const RAGE_POTION_SCALE = 2.5
+const SPEED_POTION_SCALE = 2.5
 const PICKUP_RADIUS = 2
-const HEALTH_POTION_ANIMATION = 'Key.002Action'
-const RAGE_POTION_ANIMATION = 'Key.001Action'
-const SPEED_POTION_ANIMATION = 'KeyAction'
+
+const HEALTH_POTION_ANIMS = ['Empty heartAction']
+const RAGE_POTION_ANIMS = ['Rage_lowAction', 'FireAction']
+const SPEED_POTION_ANIMS = ['Spped.001Action', 'SppedAction.001']
 
 type PotionType = 'health' | 'rage' | 'speed'
 
@@ -36,6 +45,50 @@ const PotionPickupComponent = engine.defineComponent('PotionPickup', PotionPicku
 let healthPickupFeedbackText = ''
 let healthPickupFeedbackEndTime = 0
 let isPotionSyncInitialized = false
+let healthPickupEffectEntity: Entity | null = null
+let healthPickupEffectHideAtMs = 0
+
+const EFFECT_SCALE_HIDDEN = Vector3.create(0.001, 0.001, 0.001)
+const EFFECT_SCALE_VISIBLE = Vector3.One()
+
+function ensureHealthPickupEffectEntity(): Entity {
+  if (healthPickupEffectEntity !== null && Transform.has(healthPickupEffectEntity)) return healthPickupEffectEntity
+  const entity = engine.addEntity()
+  Transform.create(entity, {
+    parent: engine.PlayerEntity,
+    position: Vector3.Zero(),
+    rotation: Quaternion.Identity(),
+    scale: EFFECT_SCALE_HIDDEN
+  })
+  GltfContainer.create(entity, {
+    src: HEALTH_PICKUP_EFFECT_GLB,
+    visibleMeshesCollisionMask: 0,
+    invisibleMeshesCollisionMask: 0
+  })
+  Animator.create(entity, {
+    states: HEALTH_PICKUP_EFFECT_ANIMS.map((clip) => ({ clip, playing: true, loop: true, speed: 1 }))
+  })
+  healthPickupEffectEntity = entity
+  return entity
+}
+
+function triggerHealthPickupEffect(now: number): void {
+  const entity = ensureHealthPickupEffectEntity()
+  Animator.getMutable(entity).states = HEALTH_PICKUP_EFFECT_ANIMS.map((clip) => ({
+    clip, playing: true, loop: true, speed: 1, shouldReset: true
+  }))
+  Transform.getMutable(entity).scale = EFFECT_SCALE_VISIBLE
+  healthPickupEffectHideAtMs = now + HEALTH_PICKUP_EFFECT_DURATION
+}
+
+export function healthPickupEffectSystem(gameTime: number): void {
+  if (healthPickupEffectEntity === null) return
+  if (!Transform.has(healthPickupEffectEntity)) return
+  if (healthPickupEffectHideAtMs > 0 && gameTime >= healthPickupEffectHideAtMs) {
+    Transform.getMutable(healthPickupEffectEntity).scale = EFFECT_SCALE_HIDDEN
+    healthPickupEffectHideAtMs = 0
+  }
+}
 const localPotionEntityById = new Map<string, Entity>()
 let lastPotionRoomId = getCurrentRoomId()
 
@@ -56,10 +109,10 @@ function getPotionScale(potionType: PotionType): number {
   return SPEED_POTION_SCALE
 }
 
-function getPotionAnimation(potionType: PotionType): string {
-  if (potionType === 'health') return HEALTH_POTION_ANIMATION
-  if (potionType === 'rage') return RAGE_POTION_ANIMATION
-  return SPEED_POTION_ANIMATION
+function getPotionAnims(potionType: PotionType): string[] {
+  if (potionType === 'health') return HEALTH_POTION_ANIMS
+  if (potionType === 'rage') return RAGE_POTION_ANIMS
+  return SPEED_POTION_ANIMS
 }
 
 function createPotionEntity(potionId: string, potionType: PotionType, position: Vector3, removeAtTime: number): void {
@@ -86,7 +139,7 @@ function createPotionEntity(potionId: string, potionType: PotionType, position: 
     invisibleMeshesCollisionMask: 0
   })
   Animator.create(child, {
-    states: [{ clip: getPotionAnimation(potionType), playing: true, loop: true, speed: 1 }]
+    states: getPotionAnims(potionType).map((clip) => ({ clip, playing: true, loop: true, speed: 1 }))
   })
   PotionPickupComponent.create(root, {
     potionId,
@@ -125,6 +178,7 @@ function applyLocalPotionEffect(potionType: PotionType, now: number): void {
     healthPickupFeedbackEndTime = now + 1.5
     setHealGlowEndTime(now + 1.5)
     playHealthPickupSound()
+    triggerHealthPickupEffect(now)
     return
   }
 
@@ -150,6 +204,9 @@ function isLocalPlayerInCurrentMatch(): boolean {
 export function initPotionSyncClient(): void {
   if (isPotionSyncInitialized) return
   isPotionSyncInitialized = true
+
+  // Pre-load the health pickup effect GLB so it's ready when needed on mobile
+  ensureHealthPickupEffectEntity()
 
   room.onMessage('potionSpawned', (data) => {
     if (data.roomId !== getCurrentRoomId()) return

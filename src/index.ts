@@ -42,7 +42,7 @@ import { rageEffectSystem } from './rageEffect'
 import { speedEffectSystem } from './speedEffect'
 import { initRageAura } from './rageAura'
 import { initSpeedAura } from './speedAura'
-import { initPotionSyncClient, potionPickupSystem, potionVisualSystem } from './potions'
+import { initPotionSyncClient, potionPickupSystem, potionVisualSystem, healthPickupEffectSystem } from './potions'
 import { initCollectibleClient, collectibleSystem } from './collectible'
 import { EntityNames } from '../assets/scene/entity-names'
 import { setupLobbyServer } from './server/lobbyServer'
@@ -439,6 +439,7 @@ export function main() {
   // Potion pickup and visual (tilt + spin)
   engine.addSystem(potionPickupSystem)
   engine.addSystem(potionVisualSystem)
+  engine.addSystem(() => healthPickupEffectSystem(getGameTime()))
   engine.addSystem(collectibleSystem)
   engine.addSystem(lavaHazardSystem)
   initDeathAnimationSystem()

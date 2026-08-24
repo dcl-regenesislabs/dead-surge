@@ -2,9 +2,7 @@ import { Vector3 } from '@dcl/sdk/math'
 import { ROOM_IDS, RoomId, getArenaRoomConfig } from './roomConfig'
 
 export const LAVA_MODEL_SRCS = [
-  'assets/asset-packs/lava/lava.glb',
-  'assets/asset-packs/lava_2/lava_02.glb',
-  'assets/asset-packs/lava_3/lava_03.glb'
+  'assets/custom/models/lava .glb'
 ] as const
 
 export const LAVA_FIRST_WAVE = 1
