@@ -287,7 +287,10 @@ export function initLavaHazardClient(): void {
 }
 
 export function lavaHazardSystem(): void {
-  if (!areLavaZonesInitialized) return
+  if (!areLavaZonesInitialized) {
+    if (fireOnPlayerEntity) VisibilityComponent.getMutable(fireOnPlayerEntity).visible = false
+    return
+  }
 
   const roomId = getCurrentRoomId()
   if (lastVisualRoomId && lastVisualRoomId !== roomId) {
@@ -296,6 +299,7 @@ export function lavaHazardSystem(): void {
   lastVisualRoomId = roomId
 
   if (!isLocalPlayerInCurrentMatch(roomId)) {
+    if (fireOnPlayerEntity) VisibilityComponent.getMutable(fireOnPlayerEntity).visible = false
     clearAllLavaHazards(roomId)
     return
   }

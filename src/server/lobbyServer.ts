@@ -77,9 +77,9 @@ const PLAYER_HEAL_REQUEST_COOLDOWN_MS = 250
 const HEALTH_POTION_HEAL_AMOUNT = PLAYER_MAX_HP
 // TESTING: raised ~5x over the production rates so the powerup models show up often
 // without flooding the arena. Production values: health 0.02, rage 0.015, speed 0.015.
-const HEALTH_POTION_DROP_CHANCE = 0.1
-const RAGE_POTION_DROP_CHANCE = 0.075
-const SPEED_POTION_DROP_CHANCE = 0.075
+const HEALTH_POTION_DROP_CHANCE = 0.02
+const RAGE_POTION_DROP_CHANCE = 0.015
+const SPEED_POTION_DROP_CHANCE = 0.015
 
 const RAGE_SHIELD_DURATION_MS = 10_000
 const SPEED_POTION_DURATION_MS = 10_000
