@@ -13,8 +13,8 @@
     "server-logs": "sdk-commands sdk-server-logs"
   },
   "devDependencies": {
-    "@dcl/js-runtime": "7.24.4-28592331167.commit-697ce9e",
-    "@dcl/sdk": "7.24.4-28592331167.commit-697ce9e"
+    "@dcl/js-runtime": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/bevy-headless-server/@dcl/js-runtime/dcl-js-runtime-7.26.1-32272684883.commit-03948db.tgz",
+    "@dcl/sdk": "https://sdk-team-cdn.decentraland.org/@dcl/js-sdk-toolchain/branch/feat/bevy-headless-server/dcl-sdk-7.26.1-32272684883.commit-03948db.tgz"
   },
   "engines": {
     "node": ">=16.0.0",
