@@ -12,10 +12,9 @@ import { getLobbyState, getLocalAddress, isLocalReadyForMatch, sendPlayerHealReq
 
 const HEALTH_PICKUP_EFFECT_GLB = 'assets/custom/models/powerup_health.glb'
 const HEALTH_PICKUP_EFFECT_ANIMS = [
-  'Health iconsAction.001', 'Health icons.001Action.001', 'Health icons.002Action.001',
-  'Health icons.003Action.001', 'Health icons.004Action.001', 'Health icons.005Action.001',
-  'Health icons.006Action.001', 'Health icons.007Action.001', 'Health icons.008Action.001',
-  'Health icons.009Action.001', 'Empty health icons.001Action', 'Empty heartAction.001'
+  'Health_OrbitBurst',
+  'Health1_Burst', 'Health2_Burst', 'Health3_Burst', 'Health4_Burst',
+  'Health5_Burst', 'Health6_Burst', 'HealthFloor_Pulse'
 ]
 const HEALTH_PICKUP_EFFECT_DURATION = 2.0
 
@@ -24,20 +23,13 @@ const RAGE_POTION_GLB = 'assets/custom/models/powerup_rage_floor.glb'
 const SPEED_POTION_GLB = 'assets/custom/models/powerup_speed_floor.glb'
 
 const HEALTH_POTION_SCALE = 1.5
-const RAGE_POTION_SCALE = 1.5
-const SPEED_POTION_SCALE = 1.5
+const RAGE_POTION_SCALE = 2.5
+const SPEED_POTION_SCALE = 2.5
 const PICKUP_RADIUS = 2
 
-const HEALTH_POTION_ANIMS = [
-  'Empty heartAction', 'Health iconsAction', 'Health icons.001Action', 'Health icons.002Action',
-  'Health icons.003Action', 'Health icons.004Action', 'Health icons.005Action',
-  'Health icons.006Action', 'Health icons.007Action', 'Health icons.008Action', 'Health icons.009Action'
-]
-const RAGE_POTION_ANIMS = [
-  'powerup_rageAction.001', 'ArmatureAction.009', 'ArmatureAction.010',
-  'ArmatureAction.011', 'ArmatureAction.012', 'ArmatureAction.013', 'Fire emptyAction.002'
-]
-const SPEED_POTION_ANIMS = ['CylinderAction.002', 'CylinderAction.003', 'SppedAction.001']
+const HEALTH_POTION_ANIMS = ['Empty heartAction']
+const RAGE_POTION_ANIMS = ['Rage_lowAction', 'FireAction']
+const SPEED_POTION_ANIMS = ['Spped.001Action', 'SppedAction.001']
 
 type PotionType = 'health' | 'rage' | 'speed'
 

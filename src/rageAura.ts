@@ -2,11 +2,12 @@ import { Animator, engine, Entity, GltfContainer, Transform, VisibilityComponent
 import { Vector3, Quaternion } from '@dcl/sdk/math'
 import { isRaging } from './rageEffect'
 
-const RAGE_AURA_GLB = 'assets/custom/models/powerup_rage_1.glb'
+const RAGE_AURA_GLB = 'assets/custom/models/powerup_rage.glb'
 const RAGE_AURA_ANIMS = [
-  'powerup_rageAction.002', 'ArmatureAction.014', 'ArmatureAction.015',
-  'ArmatureAction.016', 'ArmatureAction.017', 'ArmatureAction.018',
-  'Fire emptyAction.003', 'PlaneAction'
+  'RageHex_Spin',
+  'Rage1_Wave', 'Flame1_Flicker', 'Rage2_Wave', 'Flame2_Flicker',
+  'Rage3_Wave', 'Flame3_Flicker', 'Rage4_Wave', 'Flame4_Flicker',
+  'Rage5_Wave', 'Flame5_Flicker', 'Rage6_Wave', 'Flame6_Flicker'
 ]
 
 let auraEntity: Entity | null = null

@@ -4,7 +4,12 @@ import { getSpeedPickupFlashTimeLeft, isSpeedActive } from './speedEffect'
 import { getGameTime } from './zombie'
 
 const SPEED_AURA_GLB = 'assets/custom/models/powerup_speed.glb'
-const SPEED_AURA_ANIMS = ['CylinderAction', 'CylinderAction.001', 'SppedAction']
+const SPEED_AURA_ANIMS = [
+  'Lightray1_TornadoSpin', 'Lightray2_TornadoSpin', 'Lightray3_TornadoSpin',
+  'Lightray4_TornadoSpin', 'Lightray5_TornadoSpin', 'Lightray6_TornadoSpin',
+  'Lightray7_TornadoSpin', 'Lightray8_TornadoSpin', 'Lightray9_TornadoSpin',
+  'Speed_Hover'
+]
 
 const SPEED_FLASH_DURATION_SEC = 0.65
 
