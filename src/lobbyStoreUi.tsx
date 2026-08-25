@@ -69,10 +69,11 @@ function getEffectiveCanvasViewport() {
   const canvasInfo = getUiCanvasInfo()
   if (!canvasInfo) return null
   const devicePixelRatio = canvasInfo.devicePixelRatio > 0 ? canvasInfo.devicePixelRatio : 1
+  const viewportDivisor = isMobile() ? devicePixelRatio : 1
   return {
-    width: Math.round(canvasInfo.width / devicePixelRatio),
-    height: Math.round(canvasInfo.height / devicePixelRatio),
-    devicePixelRatio,
+    // The shop layout was tuned against pre-7.26 mobile sizing, so keep using density-compensated viewport units there.
+    width: Math.round(canvasInfo.width / viewportDivisor),
+    height: Math.round(canvasInfo.height / viewportDivisor)
   }
 }
 
