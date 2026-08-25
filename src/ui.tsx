@@ -1,3 +1,4 @@
+import { engine, UiCanvasInformation } from '@dcl/sdk/ecs'
 import ReactEcs, { ReactEcsRenderer, ScreenInsetArea, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
 import { movePlayerTo } from '~system/RestrictedActions'
@@ -620,6 +621,8 @@ function syncCachedArenaRoster(
 let isMobileRuntime = detectMobileUserAgent()
 export function isMobile(): boolean { return isMobileRuntime }
 let runtimePlatformLookupRequested = false
+let uiRendererSyncRegistered = false
+let lastAppliedUiRendererSignature = ''
 let gameOverCounterAnimationStartedAtMs = 0
 let gameOverOverlayVisibleLastFrame = false
 
@@ -755,11 +758,41 @@ function ServerLoadingPanel(props: {
   )
 }
 
-function applyUiRenderer(): void {
-  ReactEcsRenderer.setUiRenderer(uiMenu, {
-    virtualWidth: isMobileRuntime ? 1600 : 1920,
-    virtualHeight: isMobileRuntime ? 720 : 1080
-  })
+function getUiCanvasInfo() {
+  return UiCanvasInformation.getOrNull(engine.RootEntity)
+}
+
+function getMobileUiDensityScale(): number {
+  if (!isMobileRuntime) return 1
+  const canvasInfo = getUiCanvasInfo()
+  if (!canvasInfo) return 1
+  return canvasInfo.devicePixelRatio > 0 ? canvasInfo.devicePixelRatio : 1
+}
+
+function getUiRendererConfig() {
+  const densityScale = getMobileUiDensityScale()
+  const virtualWidth = isMobileRuntime ? Math.max(1, Math.round(1600 * densityScale)) : 1920
+  const virtualHeightBase = isMobileRuntime ? Math.max(1, Math.round(720 * densityScale)) : 1080
+
+  return {
+    virtualWidth,
+    // Keep the mobile virtual size off exact 16:9 so the SDK does not override it back to 1600x720.
+    virtualHeight: isMobileRuntime ? virtualHeightBase + 1 : virtualHeightBase,
+    screenInset: 'none' as const
+  }
+}
+
+function applyUiRenderer(force: boolean = false): void {
+  const config = getUiRendererConfig()
+  const signature = `${isMobileRuntime}:${config.virtualWidth}x${config.virtualHeight}:${config.screenInset}`
+  if (!force && signature === lastAppliedUiRendererSignature) return
+
+  ReactEcsRenderer.setUiRenderer(uiMenu, config)
+  lastAppliedUiRendererSignature = signature
+}
+
+function syncUiRendererSystem(): void {
+  applyUiRenderer()
 }
 
 export function setupUi() {
@@ -767,7 +800,11 @@ export function setupUi() {
     runtimePlatformLookupRequested = true
     void resolveRuntimePlatform()
   }
-  applyUiRenderer()
+  if (!uiRendererSyncRegistered) {
+    uiRendererSyncRegistered = true
+    engine.addSystem(syncUiRendererSystem)
+  }
+  applyUiRenderer(true)
 }
 
 function GameOverOverlay(props: { stats: GameOverStatsModel }) {
