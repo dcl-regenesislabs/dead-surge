@@ -88,7 +88,8 @@ const LobbyMessages = {
   potionClaimed: Schemas.Map({
     roomId: Schemas.String,
     potionId: Schemas.String,
-    claimerAddress: Schemas.String
+    claimerAddress: Schemas.String,
+    potionType: Schemas.String
   }),
   potionExpired: Schemas.Map({
     roomId: Schemas.String,

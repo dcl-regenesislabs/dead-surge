@@ -2266,7 +2266,8 @@ export function setupLobbyServer(): void {
     sendToArena(roomId, 'potionClaimed', {
       roomId,
       potionId: data.potionId,
-      claimerAddress: normalizedAddress
+      claimerAddress: normalizedAddress,
+      potionType: potion.potionType
     })
   })
 

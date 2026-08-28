@@ -15,6 +15,19 @@ export const RAGE_AURA_ANIMS = [
   'Flame6_Flicker'
 ]
 
+export const HEALTH_PICKUP_EFFECT_GLB = 'assets/custom/models/powerup_health.glb'
+export const HEALTH_PICKUP_EFFECT_ANIMS = [
+  'Health_OrbitBurst',
+  'Health1_Burst',
+  'Health2_Burst',
+  'Health3_Burst',
+  'Health4_Burst',
+  'Health5_Burst',
+  'Health6_Burst',
+  'HealthFloor_Pulse'
+]
+export const HEALTH_PICKUP_EFFECT_DURATION_SECONDS = 2.0
+
 export const SPEED_AURA_GLB = 'assets/custom/models/powerup_speed.glb'
 export const SPEED_AURA_ANIMS = [
   'Lightray1_TornadoSpin',
