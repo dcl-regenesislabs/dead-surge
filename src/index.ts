@@ -2,7 +2,6 @@ import {
   engine,
   pointerEventsSystem,
   PointerEvents,
-  InputAction,
   Transform,
   MainCamera,
   VirtualCamera

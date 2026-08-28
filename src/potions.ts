@@ -9,14 +9,12 @@ import { applySpeedEffect } from './speedEffect'
 import { getGameTime } from './zombie'
 import { getServerTime } from './shared/timeSync'
 import { getLobbyState, getLocalAddress, isLocalReadyForMatch, sendPlayerHealRequest } from './multiplayer/lobbyClient'
-
-const HEALTH_PICKUP_EFFECT_GLB = 'assets/custom/models/powerup_health.glb'
-const HEALTH_PICKUP_EFFECT_ANIMS = [
-  'Health_OrbitBurst',
-  'Health1_Burst', 'Health2_Burst', 'Health3_Burst', 'Health4_Burst',
-  'Health5_Burst', 'Health6_Burst', 'HealthFloor_Pulse'
-]
-const HEALTH_PICKUP_EFFECT_DURATION = 2.0
+import {
+  HEALTH_PICKUP_EFFECT_ANIMS,
+  HEALTH_PICKUP_EFFECT_DURATION_SECONDS,
+  HEALTH_PICKUP_EFFECT_GLB
+} from './shared/powerupVisuals'
+import { playRemoteHealthPickupEffect } from './arenaRemotePowerups'
 
 const HEALTH_POTION_GLB = 'assets/custom/models/powerup_health_floor.glb'
 const RAGE_POTION_GLB = 'assets/custom/models/powerup_rage_floor.glb'
@@ -32,6 +30,10 @@ const RAGE_POTION_ANIMS = ['Rage_lowAction', 'FireAction']
 const SPEED_POTION_ANIMS = ['Spped.001Action', 'SppedAction.001']
 
 type PotionType = 'health' | 'rage' | 'speed'
+
+function isPotionType(value: string): value is PotionType {
+  return value === 'health' || value === 'rage' || value === 'speed'
+}
 
 const PotionPickupSchema = {
   potionId: Schemas.String,
@@ -78,7 +80,7 @@ function triggerHealthPickupEffect(now: number): void {
     clip, playing: true, loop: true, speed: 1, shouldReset: true
   }))
   Transform.getMutable(entity).scale = EFFECT_SCALE_VISIBLE
-  healthPickupEffectHideAtMs = now + HEALTH_PICKUP_EFFECT_DURATION
+  healthPickupEffectHideAtMs = now + HEALTH_PICKUP_EFFECT_DURATION_SECONDS
 }
 
 export function healthPickupEffectSystem(gameTime: number): void {
@@ -222,20 +224,33 @@ export function initPotionSyncClient(): void {
 
   room.onMessage('potionClaimed', (data) => {
     if (data.roomId !== getCurrentRoomId()) return
+    if (!isLocalPlayerInCurrentMatch()) {
+      removePotionById(data.potionId)
+      return
+    }
     const entity = localPotionEntityById.get(data.potionId)
     const localAddress = getLocalAddress()
     const now = getGameTime()
+    const normalizedLocalAddress = localAddress?.toLowerCase()
+    const normalizedClaimerAddress = data.claimerAddress.toLowerCase()
+    let localPotionType: PotionType | null = null
 
     if (entity && PotionPickupComponent.has(entity)) {
       const potion = PotionPickupComponent.get(entity)
-      removePotion(entity, potion)
-      if (
-        localAddress &&
-        data.claimerAddress.toLowerCase() === localAddress &&
-        (potion.potionType === 'health' || potion.potionType === 'rage' || potion.potionType === 'speed')
-      ) {
-        applyLocalPotionEffect(potion.potionType, now)
+      if (isPotionType(potion.potionType)) {
+        localPotionType = potion.potionType
       }
+      removePotion(entity, potion)
+    }
+
+    const claimedPotionType = isPotionType(data.potionType) ? data.potionType : localPotionType
+    if (!claimedPotionType) return
+    if (normalizedLocalAddress && normalizedClaimerAddress === normalizedLocalAddress) {
+      applyLocalPotionEffect(claimedPotionType, now)
+      return
+    }
+    if (claimedPotionType === 'health') {
+      playRemoteHealthPickupEffect(normalizedClaimerAddress)
     }
   })
 

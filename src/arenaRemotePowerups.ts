@@ -1,5 +1,5 @@
-import { engine, Entity, Material, MeshRenderer, PlayerIdentityData, Transform } from '@dcl/sdk/ecs'
-import { Color3, Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
+import { Animator, engine, Entity, GltfContainer, PlayerIdentityData, Transform, VisibilityComponent } from '@dcl/sdk/ecs'
+import { Quaternion, Vector3 } from '@dcl/sdk/math'
 import {
   getLobbyState,
   getLocalAddress,
@@ -8,31 +8,27 @@ import {
   isLocalReadyForMatch
 } from './multiplayer/lobbyClient'
 import { getServerTime } from './shared/timeSync'
-
-const RAGE_AURA_BASE_SCALE = 2.4
-const RAGE_AURA_PULSE_MIN = 0.92
-const RAGE_AURA_PULSE_MAX = 1.08
-const RAGE_AURA_HEIGHT_OFFSET = 1.0
-const RAGE_AURA_EMISSIVE_INTENSITY_MIN = 0.5
-const RAGE_AURA_EMISSIVE_INTENSITY_MAX = 1.2
-
-const SPEED_PARTICLE_COUNT = 8
-const SPEED_BASE_HEIGHT = 0.3
-const SPEED_HEIGHT_STEP = 0.23
-const SPEED_BASE_RADIUS = 0.22
-const SPEED_RADIUS_STEP = 0.075
-const SPEED_ROTATION_SPEED = 7.5
-const SPEED_VERTICAL_WAVE = 0.05
-const SPEED_BASE_SCALE = 0.11
-const SPEED_SCALE_STEP = 0.014
+import {
+  HEALTH_PICKUP_EFFECT_ANIMS,
+  HEALTH_PICKUP_EFFECT_DURATION_SECONDS,
+  HEALTH_PICKUP_EFFECT_GLB,
+  RAGE_AURA_ANIMS,
+  RAGE_AURA_GLB,
+  SPEED_AURA_ANIMS,
+  SPEED_AURA_GLB
+} from './shared/powerupVisuals'
 
 type RemotePowerupEntry = {
   avatarEntity: Entity
+  healthEffectEntity: Entity
   rageAuraEntity: Entity
-  speedParticleEntities: Entity[]
+  speedAuraEntity: Entity
 }
 
 type TransformData = ReturnType<typeof Transform.get>
+
+const remoteHealthEffectHideAtMsByAddress = new Map<string, number>()
+const remoteHealthEffectResetPendingAddresses = new Set<string>()
 
 function canShowArenaRemotePowerups(): boolean {
   const lobbyState = getLobbyState()
@@ -96,15 +92,26 @@ class ArenaRemotePowerups {
 
   private updateEffects(): void {
     const serverNowMs = getServerTime()
-    const timeSeconds = serverNowMs / 1000
+    for (const [address, hideAtMs] of remoteHealthEffectHideAtMsByAddress) {
+      if (hideAtMs <= serverNowMs) {
+        remoteHealthEffectHideAtMsByAddress.delete(address)
+        remoteHealthEffectResetPendingAddresses.delete(address)
+      }
+    }
 
     for (const [address, entry] of this.entriesByAddress) {
       const avatarTransform = Transform.getOrNull(entry.avatarEntity)
       if (avatarTransform == null) continue
 
       const powerup = getPlayerPowerupSnapshot(address)
-      updateRemoteRageAura(entry.rageAuraEntity, avatarTransform, powerup.rageShieldEndAtMs > serverNowMs, timeSeconds)
-      updateRemoteSpeedAura(entry.speedParticleEntities, avatarTransform, powerup.speedEndAtMs > serverNowMs, timeSeconds)
+      const healthEffectHideAtMs = remoteHealthEffectHideAtMsByAddress.get(address) ?? 0
+      if (healthEffectHideAtMs > serverNowMs && remoteHealthEffectResetPendingAddresses.has(address)) {
+        resetRemoteHealthEffect(entry.healthEffectEntity)
+        remoteHealthEffectResetPendingAddresses.delete(address)
+      }
+      updateRemoteAura(entry.healthEffectEntity, avatarTransform, healthEffectHideAtMs > serverNowMs)
+      updateRemoteAura(entry.rageAuraEntity, avatarTransform, powerup.rageShieldEndAtMs > serverNowMs)
+      updateRemoteAura(entry.speedAuraEntity, avatarTransform, powerup.speedEndAtMs > serverNowMs)
     }
   }
 
@@ -112,117 +119,85 @@ class ArenaRemotePowerups {
     const entry = this.entriesByAddress.get(address)
     if (!entry) return
     this.entriesByAddress.delete(address)
+    remoteHealthEffectHideAtMsByAddress.delete(address)
+    remoteHealthEffectResetPendingAddresses.delete(address)
+    engine.removeEntity(entry.healthEffectEntity)
     engine.removeEntity(entry.rageAuraEntity)
-    for (const particle of entry.speedParticleEntities) {
-      engine.removeEntity(particle)
-    }
+    engine.removeEntity(entry.speedAuraEntity)
   }
 }
 
 function createRemotePowerupEntry(avatarEntity: Entity): RemotePowerupEntry {
-  const rageAuraEntity = engine.addEntity()
-  Transform.create(rageAuraEntity, {
-    position: Vector3.Zero(),
-    rotation: Quaternion.Identity(),
-    scale: Vector3.Zero()
-  })
-  MeshRenderer.setSphere(rageAuraEntity)
-  Material.setPbrMaterial(rageAuraEntity, {
-    albedoColor: Color4.create(0.95, 0.15, 0.2, 0.35),
-    emissiveColor: Color3.create(1, 0.25, 0.3),
-    emissiveIntensity: RAGE_AURA_EMISSIVE_INTENSITY_MAX,
-    metallic: 0,
-    roughness: 1
-  })
-
-  const speedParticleEntities: Entity[] = []
-  for (let index = 0; index < SPEED_PARTICLE_COUNT; index += 1) {
-    const particle = engine.addEntity()
-    Transform.create(particle, {
-      position: Vector3.Zero(),
-      rotation: Quaternion.Identity(),
-      scale: Vector3.Zero()
-    })
-    MeshRenderer.setSphere(particle)
-
-    const brightness = 0.78 + index * 0.025
-    Material.setPbrMaterial(particle, {
-      albedoColor: Color4.create(1, 0.9 + index * 0.01, 0.3, 0.9),
-      emissiveColor: Color3.create(1, brightness, 0.24),
-      emissiveIntensity: 1.6 + index * 0.08,
-      metallic: 0,
-      roughness: 0.35
-    })
-    speedParticleEntities.push(particle)
-  }
+  const healthEffectEntity = createRemoteHealthEffectEntity()
+  const rageAuraEntity = createRemoteAuraEntity(RAGE_AURA_GLB, RAGE_AURA_ANIMS)
+  const speedAuraEntity = createRemoteAuraEntity(SPEED_AURA_GLB, SPEED_AURA_ANIMS)
 
   return {
     avatarEntity,
+    healthEffectEntity,
     rageAuraEntity,
-    speedParticleEntities
+    speedAuraEntity
   }
 }
 
-function updateRemoteRageAura(
-  entity: Entity,
-  avatarTransform: TransformData,
-  active: boolean,
-  timeSeconds: number
-): void {
+function createRemoteHealthEffectEntity(): Entity {
+  const entity = engine.addEntity()
+  Transform.create(entity, {
+    position: Vector3.Zero(),
+    rotation: Quaternion.Identity(),
+    scale: Vector3.One()
+  })
+  GltfContainer.create(entity, {
+    src: HEALTH_PICKUP_EFFECT_GLB,
+    visibleMeshesCollisionMask: 0,
+    invisibleMeshesCollisionMask: 0
+  })
+  Animator.create(entity, {
+    states: HEALTH_PICKUP_EFFECT_ANIMS.map((clip) => ({ clip, playing: true, loop: true, speed: 1 }))
+  })
+  VisibilityComponent.create(entity, { visible: false })
+  return entity
+}
+
+function createRemoteAuraEntity(src: string, clips: string[]): Entity {
+  const entity = engine.addEntity()
+  Transform.create(entity, {
+    position: Vector3.Zero(),
+    rotation: Quaternion.Identity(),
+    scale: Vector3.One()
+  })
+  GltfContainer.create(entity, {
+    src,
+    visibleMeshesCollisionMask: 0,
+    invisibleMeshesCollisionMask: 0
+  })
+  Animator.create(entity, {
+    states: clips.map((clip) => ({ clip, playing: true, loop: true, speed: 1 }))
+  })
+  VisibilityComponent.create(entity, { visible: false })
+  return entity
+}
+
+function resetRemoteHealthEffect(entity: Entity): void {
+  Animator.getMutable(entity).states = HEALTH_PICKUP_EFFECT_ANIMS.map((clip) => ({
+    clip,
+    playing: true,
+    loop: true,
+    speed: 1,
+    shouldReset: true
+  }))
+}
+
+function updateRemoteAura(entity: Entity, avatarTransform: TransformData, active: boolean): void {
   const transform = Transform.getMutable(entity)
-  if (!active) {
-    transform.scale = Vector3.Zero()
-    return
-  }
-
-  const pulse = 0.5 + 0.5 * Math.sin(timeSeconds * 5)
-  const scaleMul = RAGE_AURA_PULSE_MIN + (RAGE_AURA_PULSE_MAX - RAGE_AURA_PULSE_MIN) * pulse
-  const scale = RAGE_AURA_BASE_SCALE * scaleMul
-  const emissive =
-    RAGE_AURA_EMISSIVE_INTENSITY_MIN +
-    (RAGE_AURA_EMISSIVE_INTENSITY_MAX - RAGE_AURA_EMISSIVE_INTENSITY_MIN) * pulse
-
-  transform.position = Vector3.add(avatarTransform.position, Vector3.create(0, RAGE_AURA_HEIGHT_OFFSET, 0))
-  transform.rotation = avatarTransform.rotation
-  transform.scale = Vector3.create(scale, scale, scale)
-  const material = Material.getFlatMutableOrNull(entity)
-  if (material) {
-    material.emissiveIntensity = emissive
-  }
-}
-
-function updateRemoteSpeedAura(
-  particles: Entity[],
-  avatarTransform: TransformData,
-  active: boolean,
-  timeSeconds: number
-): void {
-  if (!active) {
-    for (const particle of particles) {
-      Transform.getMutable(particle).scale = Vector3.Zero()
-    }
-    return
-  }
-
-  for (let index = 0; index < particles.length; index += 1) {
-    const phase = index / particles.length
-    const angle = timeSeconds * SPEED_ROTATION_SPEED + phase * Math.PI * 2
-    const radius =
-      SPEED_BASE_RADIUS +
-      index * SPEED_RADIUS_STEP +
-      0.03 * Math.sin(timeSeconds * 9 + index * 0.8)
-    const height =
-      SPEED_BASE_HEIGHT +
-      index * SPEED_HEIGHT_STEP +
-      SPEED_VERTICAL_WAVE * Math.sin(timeSeconds * 10 + index * 0.7)
-    const scale = SPEED_BASE_SCALE + index * SPEED_SCALE_STEP
-    const localOffset = Vector3.create(Math.cos(angle) * radius, height, Math.sin(angle) * radius)
-
-    const transform = Transform.getMutable(particles[index])
-    transform.position = Vector3.add(avatarTransform.position, Vector3.rotate(localOffset, avatarTransform.rotation))
-    transform.rotation = Quaternion.Identity()
-    transform.scale = Vector3.create(scale, scale, scale)
-  }
+  transform.position = Vector3.clone(avatarTransform.position)
+  transform.rotation = Quaternion.create(
+    avatarTransform.rotation.x,
+    avatarTransform.rotation.y,
+    avatarTransform.rotation.z,
+    avatarTransform.rotation.w
+  )
+  VisibilityComponent.getMutable(entity).visible = active
 }
 
 let arenaRemotePowerups: ArenaRemotePowerups | null = null
@@ -230,4 +205,13 @@ let arenaRemotePowerups: ArenaRemotePowerups | null = null
 export function initArenaRemotePowerups(): void {
   if (arenaRemotePowerups) return
   arenaRemotePowerups = new ArenaRemotePowerups()
+}
+
+export function playRemoteHealthPickupEffect(address: string): void {
+  const normalizedAddress = address.toLowerCase()
+  remoteHealthEffectHideAtMsByAddress.set(
+    normalizedAddress,
+    getServerTime() + HEALTH_PICKUP_EFFECT_DURATION_SECONDS * 1000
+  )
+  remoteHealthEffectResetPendingAddresses.add(normalizedAddress)
 }
