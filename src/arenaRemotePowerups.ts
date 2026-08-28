@@ -119,6 +119,8 @@ class ArenaRemotePowerups {
     const entry = this.entriesByAddress.get(address)
     if (!entry) return
     this.entriesByAddress.delete(address)
+    remoteHealthEffectHideAtMsByAddress.delete(address)
+    remoteHealthEffectResetPendingAddresses.delete(address)
     engine.removeEntity(entry.healthEffectEntity)
     engine.removeEntity(entry.rageAuraEntity)
     engine.removeEntity(entry.speedAuraEntity)
@@ -188,8 +190,13 @@ function resetRemoteHealthEffect(entity: Entity): void {
 
 function updateRemoteAura(entity: Entity, avatarTransform: TransformData, active: boolean): void {
   const transform = Transform.getMutable(entity)
-  transform.position = avatarTransform.position
-  transform.rotation = avatarTransform.rotation
+  transform.position = Vector3.clone(avatarTransform.position)
+  transform.rotation = Quaternion.create(
+    avatarTransform.rotation.x,
+    avatarTransform.rotation.y,
+    avatarTransform.rotation.z,
+    avatarTransform.rotation.w
+  )
   VisibilityComponent.getMutable(entity).visible = active
 }
 

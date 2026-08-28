@@ -31,6 +31,10 @@ const SPEED_POTION_ANIMS = ['Spped.001Action', 'SppedAction.001']
 
 type PotionType = 'health' | 'rage' | 'speed'
 
+function isPotionType(value: string): value is PotionType {
+  return value === 'health' || value === 'rage' || value === 'speed'
+}
+
 const PotionPickupSchema = {
   potionId: Schemas.String,
   potionType: Schemas.String,
@@ -220,23 +224,32 @@ export function initPotionSyncClient(): void {
 
   room.onMessage('potionClaimed', (data) => {
     if (data.roomId !== getCurrentRoomId()) return
+    if (!isLocalPlayerInCurrentMatch()) {
+      removePotionById(data.potionId)
+      return
+    }
     const entity = localPotionEntityById.get(data.potionId)
     const localAddress = getLocalAddress()
     const now = getGameTime()
     const normalizedLocalAddress = localAddress?.toLowerCase()
     const normalizedClaimerAddress = data.claimerAddress.toLowerCase()
+    let localPotionType: PotionType | null = null
 
     if (entity && PotionPickupComponent.has(entity)) {
       const potion = PotionPickupComponent.get(entity)
+      if (isPotionType(potion.potionType)) {
+        localPotionType = potion.potionType
+      }
       removePotion(entity, potion)
     }
 
-    if (data.potionType !== 'health' && data.potionType !== 'rage' && data.potionType !== 'speed') return
+    const claimedPotionType = isPotionType(data.potionType) ? data.potionType : localPotionType
+    if (!claimedPotionType) return
     if (normalizedLocalAddress && normalizedClaimerAddress === normalizedLocalAddress) {
-      applyLocalPotionEffect(data.potionType, now)
+      applyLocalPotionEffect(claimedPotionType, now)
       return
     }
-    if (data.potionType === 'health') {
+    if (claimedPotionType === 'health') {
       playRemoteHealthPickupEffect(normalizedClaimerAddress)
     }
   })
