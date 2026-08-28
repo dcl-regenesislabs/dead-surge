@@ -2,14 +2,7 @@ import { Animator, engine, Entity, GltfContainer, Transform, VisibilityComponent
 import { Vector3, Quaternion } from '@dcl/sdk/math'
 import { getSpeedPickupFlashTimeLeft, isSpeedActive } from './speedEffect'
 import { getGameTime } from './zombie'
-
-const SPEED_AURA_GLB = 'assets/custom/models/powerup_speed.glb'
-const SPEED_AURA_ANIMS = [
-  'Lightray1_TornadoSpin', 'Lightray2_TornadoSpin', 'Lightray3_TornadoSpin',
-  'Lightray4_TornadoSpin', 'Lightray5_TornadoSpin', 'Lightray6_TornadoSpin',
-  'Lightray7_TornadoSpin', 'Lightray8_TornadoSpin', 'Lightray9_TornadoSpin',
-  'Speed_Hover'
-]
+import { SPEED_AURA_ANIMS, SPEED_AURA_GLB } from './shared/powerupVisuals'
 
 const SPEED_FLASH_DURATION_SEC = 0.65
 
