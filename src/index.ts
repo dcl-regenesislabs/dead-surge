@@ -48,9 +48,11 @@ import { setupLobbyServer } from './server/lobbyServer'
 import {
   getLocalAddress,
   getLobbyState,
+  getMatchRuntimeState,
   isLocalReadyForMatch,
   sendPlayerDamageRequest,
-  setupLobbyClient
+  setupLobbyClient,
+  shouldShowGameOverOverlay
 } from './multiplayer/lobbyClient'
 import { initMatchWaveClientSystem } from './multiplayer/matchWaveClient'
 import { initLobbyWorldPanel } from './lobbyWorldPanel'
@@ -79,7 +81,8 @@ import {
   initTutorialSystem
 } from './tutorial'
 import { getTutorialCoinCameraDebugState, getTutorialZombieCameraDebugState } from './tutorialCameraDebug'
-import { isTutorialActive } from './tutorialState'
+import { isTutorialActive, isTutorialCompleted } from './tutorialState'
+import { setAnalyticsWallet, trackPlayerDied, trackSessionStarted, trackWaveReached } from './analytics'
 
 // Cinematic (Diablo-like) camera: follows player position but keeps fixed world rotation (no parent)
 const CINEMATIC_CAMERA_HEIGHT = 12
@@ -380,6 +383,41 @@ export function main() {
   }
 
   initTimeSync({ isServer: false })
+
+  // Analytics: fire session started once wallet is known
+  let analyticsSessionFired = false
+  engine.addSystem(() => {
+    if (analyticsSessionFired) return
+    const wallet = getLocalAddress()
+    if (!wallet) return
+    setAnalyticsWallet(wallet)
+    trackSessionStarted(isTutorialCompleted())
+    analyticsSessionFired = true
+  })
+
+  // Analytics: track each new wave (only for players actually in the match)
+  let lastTrackedWave = 0
+  engine.addSystem(() => {
+    if (!isLocalPlayerInCurrentMatch()) return
+    const roomId = getCurrentRoomId()
+    const waveNumber = getMatchRuntimeState(roomId)?.waveNumber ?? 0
+    if (waveNumber > 0 && waveNumber !== lastTrackedWave) {
+      lastTrackedWave = waveNumber
+      trackWaveReached(waveNumber)
+    }
+  })
+
+  // Analytics: track game over (all lives lost)
+  let gameOverVisibleLastTick = false
+  engine.addSystem(() => {
+    const gameOverVisible = shouldShowGameOverOverlay()
+    if (gameOverVisible && !gameOverVisibleLastTick) {
+      const roomId = getCurrentRoomId()
+      const waveNumber = getMatchRuntimeState(roomId)?.waveNumber ?? 0
+      trackPlayerDied(waveNumber, 'zombie')
+    }
+    gameOverVisibleLastTick = gameOverVisible
+  })
 
   setupLobbyClient()
   initArenaBackgroundMusicSystem()

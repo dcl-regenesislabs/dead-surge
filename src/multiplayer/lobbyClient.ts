@@ -17,6 +17,7 @@ import { DEFAULT_ROOM_ID, LOBBY_RETURN_POSITION, RoomId, getArenaRoomConfig, isR
 import { getServerTime } from '../shared/timeSync'
 import { setIsoViewEnabled, setTopViewEnabled, setAutoFireEnabled, setCameraModeToggleEnabled } from '../gameplayInput'
 import { setTutorialServerState } from '../tutorialState'
+import { trackMatchCompleted, trackMatchJoined } from '../analytics'
 
 let latestLobbyEvent = ''
 let latestLobbyEventType = ''
@@ -191,6 +192,9 @@ export function setupLobbyClient(): void {
       if (lastTeamWipeAffectedLocalPlayer) {
         setDeathMovementLockPosition(LOBBY_RETURN_POSITION)
         movePlayerTo({ newRelativePosition: LOBBY_RETURN_POSITION })
+        const stats = getLatestGameOverStatsSnapshot()
+        const playerCount = getLobbyState()?.arenaPlayers.length ?? 0
+        trackMatchCompleted(stats?.wavesSurvived ?? 0, playerCount)
       }
     } else {
       lastTeamWipeAffectedLocalPlayer = false
@@ -218,6 +222,7 @@ export function setupLobbyClient(): void {
       localMatchKills = 0
       localMatchZcCollected = 0
       enableArenaWeapon()
+      trackMatchJoined()
     }
     console.log(`[Lobby] ${data.type}: ${data.message}`)
   })
