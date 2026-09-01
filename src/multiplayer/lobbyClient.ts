@@ -17,7 +17,7 @@ import { DEFAULT_ROOM_ID, LOBBY_RETURN_POSITION, RoomId, getArenaRoomConfig, isR
 import { getServerTime } from '../shared/timeSync'
 import { setIsoViewEnabled, setTopViewEnabled, setAutoFireEnabled, setCameraModeToggleEnabled } from '../gameplayInput'
 import { setTutorialServerState } from '../tutorialState'
-import { trackMatchJoined, trackMatchCompleted, trackWaveReached } from '../analytics'
+import { trackMatchCompleted, trackMatchJoined } from '../analytics'
 
 let latestLobbyEvent = ''
 let latestLobbyEventType = ''

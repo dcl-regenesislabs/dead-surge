@@ -396,22 +396,25 @@ export function main() {
     analyticsSessionFired = true
   })
 
-  // Analytics: track each new wave
+  // Analytics: track each new wave (only for players actually in the match)
   let lastTrackedWave = 0
   engine.addSystem(() => {
-    const waveNumber = getMatchRuntimeState()?.waveNumber ?? 0
+    if (!isLocalPlayerInCurrentMatch()) return
+    const roomId = getCurrentRoomId()
+    const waveNumber = getMatchRuntimeState(roomId)?.waveNumber ?? 0
     if (waveNumber > 0 && waveNumber !== lastTrackedWave) {
       lastTrackedWave = waveNumber
       trackWaveReached(waveNumber)
     }
   })
 
-  // Analytics: track player death (game over = all lives lost)
+  // Analytics: track game over (all lives lost)
   let gameOverVisibleLastTick = false
   engine.addSystem(() => {
     const gameOverVisible = shouldShowGameOverOverlay()
     if (gameOverVisible && !gameOverVisibleLastTick) {
-      const waveNumber = getMatchRuntimeState()?.waveNumber ?? 0
+      const roomId = getCurrentRoomId()
+      const waveNumber = getMatchRuntimeState(roomId)?.waveNumber ?? 0
       trackPlayerDied(waveNumber, 'zombie')
     }
     gameOverVisibleLastTick = gameOverVisible

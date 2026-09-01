@@ -265,9 +265,9 @@ function spawnTutorialCoin(position: Vector3, now: number): void {
 
 function reportTutorialCompleted(): void {
   markTutorialCompletedLocally()
-  trackTutorialCompleted()
   if (tutorialState.completionReported) return
   tutorialState.completionReported = true
+  trackTutorialCompleted()
   sendCompleteTutorial()
 }
 
