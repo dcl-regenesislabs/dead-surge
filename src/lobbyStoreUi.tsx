@@ -10,6 +10,7 @@ import {
 } from './shared/loadoutCatalog'
 import { buyLoadoutWeaponLocally, equipLoadoutWeaponLocally, getPlayerGold, isLoadoutWeaponEquipped, isLoadoutWeaponOwned } from './loadoutState'
 import { sendBuyLoadoutWeapon, sendEquipLoadoutWeapon, sendRequestLoadoutRefresh } from './multiplayer/lobbyClient'
+import { trackWeaponPurchased } from './analytics'
 import { endUiPointerCapture } from './gameplayInput'
 import { isMobile } from './ui'
 import { DEBUG_SHOP_UI_ONLY } from './debugFlags'
@@ -831,6 +832,7 @@ function DetailPanel({ weapon, embedded = false }: { weapon: LoadoutWeaponDefini
         return
       }
       sendBuyLoadoutWeapon(weapon.id)
+      trackWeaponPurchased(weapon.id, weapon.priceGold)
     } : (!owned && unlocked && !canAfford ? () => {
       triggerDeniedPriceShake(weapon.id)
     } : undefined))

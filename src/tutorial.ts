@@ -1,3 +1,4 @@
+import { trackTutorialCancelled, trackTutorialCompleted, trackTutorialStarted, trackTutorialStepReached } from './analytics'
 import { engine, Entity, GltfContainer, Name, Transform } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
 import { movePlayerTo } from '~system/RestrictedActions'
@@ -264,6 +265,7 @@ function spawnTutorialCoin(position: Vector3, now: number): void {
 
 function reportTutorialCompleted(): void {
   markTutorialCompletedLocally()
+  trackTutorialCompleted()
   if (tutorialState.completionReported) return
   tutorialState.completionReported = true
   sendCompleteTutorial()
@@ -311,6 +313,7 @@ function startTutorial(): boolean {
   clearTutorialMovementLock()
   deactivatePostTutorialArrow()
   closeLobbyStore()
+  trackTutorialStarted()
   setTutorialActive(true)
   setTutorialCombatEnabled(false)
   resetZombieCoins()
@@ -355,6 +358,7 @@ function finishTutorial(): void {
 }
 
 function cancelTutorialForMatchStart(): void {
+  trackTutorialCancelled(tutorialState.phase)
   clearTutorialEntities()
   clearTutorialMovementLock()
   tutorialState.active = false
@@ -370,6 +374,7 @@ function cancelTutorialForMatchStart(): void {
 function setPhase(phase: TutorialPhase): void {
   tutorialState.phase = phase
   tutorialState.phaseStartedAt = getGameTime()
+  trackTutorialStepReached(phase)
   syncTutorialAvatarVisibility()
 }
 
