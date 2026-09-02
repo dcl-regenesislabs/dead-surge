@@ -1,4 +1,4 @@
-const POSTHOG_KEY  = 'phc_Cd589nn5SsAyZvDQjWDn3dRjjK6Zg3AMeSFNCoupERis'
+const POSTHOG_KEY  = 'phc_DffbVvzph4Ga5QakNtCAF4WorVfNWAKARbASaSLNkU6u'
 const POSTHOG_HOST = 'eu.i.posthog.com'
 const GAME_ID      = 'deadsurge'
 
